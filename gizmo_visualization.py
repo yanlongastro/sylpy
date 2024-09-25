@@ -2,7 +2,7 @@ import numpy as np
 from meshoid import Meshoid
 from scipy.interpolate import LinearNDInterpolator
 from scipy import stats
-import gizmo_analysis as ga
+from . import gizmo_analysis as ga
 import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib as plt
