@@ -184,7 +184,8 @@ def add_sizebar(ax, size, label, color='w'):
 
 def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], 
                            cmap='inferno', vmin=None, vmax=None, bhids=[], show_time=True, freefall_time_in_sim_unit=None,
-                           maxstars=1e4, force_aspect=True, show_sizebar=True, show_axes=False, message=None, axes_scale=1):
+                           maxstars=1e10, force_aspect=True, show_sizebar=True, show_axes=False, message=None, axes_scale=1,
+                           star_part_type='PartType4'):
     '''
     Make quick plot including gas, BHs, stars.
     '''
@@ -196,14 +197,14 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0],
     X, Y, sdmap = create_meshoid_map(pos, mass, hsml, rmax, res=800, xc=np.array(center), method='SurfaceDensity')
     if vmin is not None:
         sdmap[sdmap<vmin] = vmin
-    ax.pcolormesh(X, Y, sdmap, cmap=cmap, norm=colors.LogNorm(vmin=vmin, vmax=vmax))
+    ax.pcolormesh(X, Y, sdmap, cmap=cmap, norm=colors.LogNorm(vmin=vmin, vmax=vmax), shading='auto')
 
     sp = ga.snapshot(filename)
     try:
-        pos = sp.star('Coordinates')
+        pos = sp.star('Coordinates', part_type=star_part_type)
         print('Number of stars:', len(pos))
         pos = pos[np.random.choice(np.arange(len(pos)), int(maxstars*np.tanh(len(pos)/maxstars)), replace=False)] # tweak this
-        ax.scatter(pos[:,0], pos[:,1], c='cyan', s=.1)
+        ax.scatter(pos[:,0], pos[:,1], c='lime', s=1)
     except:
         print('No stars')
         pass

@@ -190,12 +190,12 @@ class snapshot:
         else:
             return res[partial]
     
-    def star(self, attr, partial=[]):
-        if 'PartType4' in list(self.f.keys()):
+    def star(self, attr, partial=[], part_type='PartType4'):
+        if part_type in list(self.f.keys()):
             if partial == []:
-                return self.f['PartType4'][attr][()]
+                return self.f[part_type][attr][()]
             else:
-                return self.f['PartType4'][attr][()][partial]
+                return self.f[part_type][attr][()][partial]
         else:
             return np.array([])
         
@@ -251,7 +251,7 @@ def get_num_snaps(path, snap='snapshot_*.hdf5'):
         else:
             break
             
-    return imax
+    return imax+1
         
 
 def pass_row_header(fname):
