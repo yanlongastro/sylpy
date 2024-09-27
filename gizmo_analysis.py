@@ -328,7 +328,7 @@ class simulation:
     """
     def __init__(self, folder):
         self.folder = folder
-        self.last = get_num_snaps(folder)
+        self.last = get_num_snaps(folder)-1
         
     def snapshot(self, i):
         return snapshot(self.folder+'/snapshot_%03d.hdf5'%i)
