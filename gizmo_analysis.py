@@ -379,7 +379,10 @@ class simulation:
             sp0 = snapshot(self.folder+'/snapshot_%03d.hdf5'%0)
         for i in range(self.last+1):
             sp = snapshot(self.folder+'/snapshot_%03d.hdf5'%i)
-            age.append(sp.time)
+            try:
+                age.append(sp.time)
+            except:
+                continue
             if bhid is not None:
                 temp = sp.single_bh(bhid, attr)
                 if difference:

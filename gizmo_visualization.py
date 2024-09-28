@@ -233,7 +233,7 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0],
         ax.annotate(txt, (height*axes_scale*72-6, height*axes_scale*72-12), 
                     xycoords='axes points', color='w', va='top', ha='right')
     if show_sizebar:
-        add_sizebar(ax, rmax/2, r'\textbf{%d\,pc}'%(rmax*1000/2))
+        add_sizebar(ax, rmax/2, r'\textbf{%g\,pc}'%(rmax*1000/2))
 
     if not show_axes:
         ax.set_xticklabels([])
