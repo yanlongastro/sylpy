@@ -211,7 +211,8 @@ class snapshot:
     def single_bh(self, bhid, attr):
         bhpid_base = min(self.f['PartType5']['ParticleIDs'][()])-1
         bhpid = bhpid_base + bhid
-        bhpid = np.where(self.f['PartType5']['ParticleIDs'][()]==bhpid)[0][0]
+        bhpid = np.where(self.f['PartType5']['ParticleIDs'][()]==bhpid)
+        bhpid = bhpid[0][0]
         return self.f['PartType5'][attr][()][bhpid]
             
     def find_gas_near_bh(self, bhid=1, kneighbor=96, drmax=10086, p_norm=2, center=None):
