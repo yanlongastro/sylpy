@@ -208,9 +208,12 @@ class snapshot:
         a = target[ids.argsort()]
         return a
     
-    def single_bh(self, bhid, attr):
-        bhpid_base = min(self.f['PartType5']['ParticleIDs'][()])-1
-        bhpid = bhpid_base + bhid
+    def single_bh(self, bhid, attr, bhid_relative=True):
+        if bhid_relative: # if bhid is starting with 1, rather than the actual id in the simulation.
+            bhpid_base = min(self.f['PartType5']['ParticleIDs'][()])-1
+            bhpid = bhpid_base + bhid
+        else:
+            bhpid = bhid
         bhpid = np.where(self.f['PartType5']['ParticleIDs'][()]==bhpid)
         bhpid = bhpid[0][0]
         return self.f['PartType5'][attr][()][bhpid]
@@ -373,7 +376,7 @@ class simulation:
             dbh.append(sp.single_bh(bh, 'Masses') - sp0.single_bh(bh, 'Masses'))
         return bhs[np.argmax(dbh)]
     
-    def get_bh_history(self, bhid=None, attr='Masses', method='sum', difference=False):
+    def get_bh_history(self, bhid=None, attr='Masses', method='sum', difference=False, bhid_relative=True):
         age = []
         history = []
         if difference is True:
@@ -381,17 +384,16 @@ class simulation:
         for i in range(self.last+1):
             sp = snapshot(self.folder+'/snapshot_%03d.hdf5'%i)
             try:
-                age.append(sp.time)
+                if bhid is not None:
+                    temp = sp.single_bh(bhid, attr, bhid_relative=bhid_relative)
+                    if difference:
+                        temp -= sp0.single_bh(bhid, attr, bhid_relative=bhid_relative)
+                else:
+                    temp = sp.bh_sorted(attr)
+                    if difference:
+                        temp -= sp0.bh_sorted(attr)
             except:
                 continue
-            if bhid is not None:
-                temp = sp.single_bh(bhid, attr)
-                if difference:
-                    temp -= sp0.single_bh(bhid, attr)
-            else:
-                temp = sp.bh_sorted(attr)
-                if difference:
-                    temp -= sp0.bh_sorted(attr)
             
             if 'norm' in method:
                 temp = np.linalg.norm(temp, axis=-1)
@@ -412,6 +414,7 @@ class simulation:
                 temp = np.sort(temp)[int(len(temp)*pct)]
             
             history.append(temp)
+            age.append(sp.time)
         return np.array(age), np.array(history)
     
     def get_sf_history(self, attr='Masses'):
