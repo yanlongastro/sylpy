@@ -167,13 +167,16 @@ def calculate_circular_velocity(center, ms, xs, zlim=np.inf):
 class snapshot:
     def __init__(self, file, showinfo=False):
         self.f =  h5py.File(file, 'r')
-        self.gas_number = self.f['Header'].attrs['NumPart_ThisFile'][0]
-        self.star_number = self.f['Header'].attrs['NumPart_ThisFile'][4]
-        self.bh_number = self.f['Header'].attrs['NumPart_ThisFile'][5]
-        self.time = self.f['Header'].attrs['Time']
-        self.UnitTime_In_CGS = self.f['Header'].attrs['UnitLength_In_CGS']/self.f['Header'].attrs['UnitVelocity_In_CGS']
-        self.time_in_yr = self.time*self.UnitTime_In_CGS/(86400*365)
-        self.bh_sink_radius = self.f['Header'].attrs['Fixed_ForceSoftening_Keplerian_Kernel_Extent'][5]/2.8
+        try:
+            self.gas_number = self.f['Header'].attrs['NumPart_ThisFile'][0]
+            self.star_number = self.f['Header'].attrs['NumPart_ThisFile'][4]
+            self.bh_number = self.f['Header'].attrs['NumPart_ThisFile'][5]
+            self.time = self.f['Header'].attrs['Time']
+            self.UnitTime_In_CGS = self.f['Header'].attrs['UnitLength_In_CGS']/self.f['Header'].attrs['UnitVelocity_In_CGS']
+            self.time_in_yr = self.time*self.UnitTime_In_CGS/(86400*365)
+            self.bh_sink_radius = self.f['Header'].attrs['Fixed_ForceSoftening_Keplerian_Kernel_Extent'][5]/2.8
+        except:
+            pass
         
         if showinfo == True:
             show_info(self.f)
@@ -215,6 +218,8 @@ class snapshot:
         else:
             bhpid = bhid
         bhpid = np.where(self.f['PartType5']['ParticleIDs'][()]==bhpid)
+        if len(bhpid)>1:
+            print("More than one particles have the same ID, should be an issue!")
         bhpid = bhpid[0][0]
         return self.f['PartType5'][attr][()][bhpid]
             
@@ -243,10 +248,12 @@ class snapshot:
     
     
     
-def get_num_snaps(path, snap='snapshot_*.hdf5'):
+def get_num_snaps(path, snap='snapshot_*.hdf5', timed=True):
     fns = glob.glob1(path, snap)
     imax = 0
     tmax = 0.
+    if not timed:
+        return len(fns)
     for i in range(1, len(fns)):
         t = os.path.getmtime(os.path.join(path, 'snapshot_%03d.hdf5'%i))
         if t>tmax:
@@ -330,9 +337,9 @@ class simulation:
     """
     A series of snapshots in a single simulation.
     """
-    def __init__(self, folder):
+    def __init__(self, folder, timed=True):
         self.folder = folder
-        self.last = get_num_snaps(folder)-1
+        self.last = get_num_snaps(folder, timed=timed)-1
         
     def snapshot(self, i):
         return snapshot(self.folder+'/snapshot_%03d.hdf5'%i)

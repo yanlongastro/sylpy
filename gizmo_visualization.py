@@ -9,13 +9,10 @@ import matplotlib as plt
 import h5py
 
 def read_snapshot(file):
-    F = h5py.File(file,"r")
-    rho = F["PartType0"]["Density"][:]
-    density_cut = (rho*300 > 0.)
-    pdata = {}
-    for field in "Masses", "Coordinates", "SmoothingLength", "Velocities", "MagneticField", "Pressure", "ElectronAbundance", "SoundSpeed", "Density", "ParticleIDs":
-        pdata[field] = F["PartType0"][field][:][density_cut]
-    F.close()
+    with h5py.File(file,"r") as F:
+        pdata = {}
+        for field in "Masses", "Coordinates", "SmoothingLength", "Velocities", "MagneticField", "Pressure", "ElectronAbundance", "SoundSpeed", "Density", "ParticleIDs":
+            pdata[field] = F["PartType0"][field][:]
     return pdata
 
 
