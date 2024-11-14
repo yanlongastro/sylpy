@@ -19,6 +19,17 @@ def read_snapshot(file):
     return pdata
 
 
+def reorder_pdata(pdata, axes=None):
+    """
+    reorder vectors in pdata following by indices in axes
+    """
+    if axes is not None:
+        assert len(axes)==3
+        for field in "Coordinates", "Velocities", "MagneticField":
+            pdata[field] = (pdata[field].T)[axes].T
+    return pdata
+
+
 def box_cut(pdata, center, halfbox, field='Masses', ord=np.inf, nroll=0):
     pos = pdata["Coordinates"]
     center = np.array(center)
@@ -185,15 +196,33 @@ def add_sizebar(ax, size, label, color='w'):
 def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], 
                            cmap='inferno', vmin=None, vmax=None, bhids=[], show_time=True, freefall_time_in_sim_unit=None,
                            maxstars=1e10, force_aspect=True, show_sizebar=True, show_axes=False, message=None, axes_scale=1,
-                           star_part_type='PartType4'):
+                           star_part_type='PartType4', axes=None):
     '''
     Make quick plot including gas, BHs, stars.
+    axes : iterable, axes to show, e.g., (0, 1) means (x, y)
     '''
     if force_aspect:
         ax.set_aspect('equal')
     
     pdata = read_snapshot(filename)
+    if axes is not None: ## reoder to show the axes in order.
+        axes = list(axes)
+        for x in (0, 1, 2):
+            if x not in axes:
+                axes.append(x)
+    else:
+        axes = [0, 1, 2]
+    pdata = reorder_pdata(pdata, axes)
+    center = np.array(center)[axes]
+    print(center)
+
     pos, mass, hsml, v = box_cut(pdata, np.array(center), rmax)
+    if len(pos)==0: ## in case there are no particles in the view
+        pos = np.array([center])
+        mass = np.array([1e-100])
+        hsml = np.array([rmax])
+        vmin = 1e-100
+        vmax = 1e-100
     X, Y, sdmap = create_meshoid_map(pos, mass, hsml, rmax, res=800, xc=np.array(center), method='SurfaceDensity')
     if vmin is not None:
         sdmap[sdmap<vmin] = vmin
