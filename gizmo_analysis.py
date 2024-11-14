@@ -211,13 +211,8 @@ class snapshot:
         a = target[ids.argsort()]
         return a
     
-    def single_bh(self, bhid, attr, bhid_relative=True):
-        if bhid_relative: # if bhid is starting with 1, rather than the actual id in the simulation.
-            bhpid_base = min(self.f['PartType5']['ParticleIDs'][()])-1
-            bhpid = bhpid_base + bhid
-        else:
-            bhpid = bhid
-        bhpid = np.where(self.f['PartType5']['ParticleIDs'][()]==bhpid)
+    def single_bh(self, bhid, attr, ):
+        bhpid = np.where(self.f['PartType5']['ParticleIDs'][()]==bhid)
         if len(bhpid)>1:
             print("More than one particles have the same ID, should be an issue!")
         bhpid = bhpid[0][0]
@@ -355,7 +350,7 @@ class simulation:
             dm = sp1.bh_sorted('Masses')/sp0.bh_sorted('Masses')
         else:
             dm = sp1.bh_sorted('Masses')-sp0.bh_sorted('Masses')
-        return (-dm).argsort()[:num]+1
+        return sp0.bh_sorted('ParticleIDs')[(-dm).argsort()][:num]
     
     def find_fastest_growth_snapshot(self, num=5, bhid=None, sort_by_ratio=False):
         ms = []
@@ -383,7 +378,7 @@ class simulation:
             dbh.append(sp.single_bh(bh, 'Masses') - sp0.single_bh(bh, 'Masses'))
         return bhs[np.argmax(dbh)]
     
-    def get_bh_history(self, bhid=None, attr='Masses', method='sum', difference=False, bhid_relative=True):
+    def get_bh_history(self, bhid=None, attr='Masses', method='', difference=False,):
         age = []
         history = []
         if difference is True:
@@ -392,9 +387,9 @@ class simulation:
             sp = snapshot(self.folder+'/snapshot_%03d.hdf5'%i)
             try:
                 if bhid is not None:
-                    temp = sp.single_bh(bhid, attr, bhid_relative=bhid_relative)
+                    temp = sp.single_bh(bhid, attr, )
                     if difference:
-                        temp -= sp0.single_bh(bhid, attr, bhid_relative=bhid_relative)
+                        temp -= sp0.single_bh(bhid, attr, )
                 else:
                     temp = sp.bh_sorted(attr)
                     if difference:
