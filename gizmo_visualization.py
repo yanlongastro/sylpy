@@ -9,13 +9,10 @@ import matplotlib as plt
 import h5py
 
 def read_snapshot(file):
-    F = h5py.File(file,"r")
-    rho = F["PartType0"]["Density"][:]
-    density_cut = (rho*300 > 0.)
-    pdata = {}
-    for field in "Masses", "Coordinates", "SmoothingLength", "Velocities", "MagneticField", "Pressure", "ElectronAbundance", "SoundSpeed", "Density", "ParticleIDs":
-        pdata[field] = F["PartType0"][field][:][density_cut]
-    F.close()
+    with h5py.File(file,"r") as F:
+        pdata = {}
+        for field in "Masses", "Coordinates", "SmoothingLength", "Velocities", "MagneticField", "Pressure", "ElectronAbundance", "SoundSpeed", "Density", "ParticleIDs":
+            pdata[field] = F["PartType0"][field][:]
     return pdata
 
 
@@ -232,7 +229,8 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0],
     try:
         pos = sp.star('Coordinates', part_type=star_part_type)
         print('Number of stars:', len(pos))
-        pos = pos[np.random.choice(np.arange(len(pos)), int(maxstars*np.tanh(len(pos)/maxstars)), replace=False)] # tweak this
+        if len(pos)>=maxstars:
+            pos = pos[np.random.choice(np.arange(len(pos)), int(maxstars*np.tanh(len(pos)/maxstars)), replace=False)] # tweak this
         ax.scatter(pos[:,0], pos[:,1], c='lime', s=1)
     except:
         print('No stars')
