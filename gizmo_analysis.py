@@ -173,6 +173,7 @@ class snapshot:
             self.bh_number = self.f['Header'].attrs['NumPart_ThisFile'][5]
             self.time = self.f['Header'].attrs['Time']
             self.UnitTime_In_CGS = self.f['Header'].attrs['UnitLength_In_CGS']/self.f['Header'].attrs['UnitVelocity_In_CGS']
+            self.UnitTime_In_Yr = self.UnitTime_In_CGS/(86400*365)
             self.time_in_yr = self.time*self.UnitTime_In_CGS/(86400*365)
             self.bh_sink_radius = self.f['Header'].attrs['Fixed_ForceSoftening_Keplerian_Kernel_Extent'][5]/2.8
         except:
@@ -339,18 +340,25 @@ class simulation:
     def snapshot(self, i):
         return snapshot(self.folder+'/snapshot_%03d.hdf5'%i)
         
-    def find_interesting_BHs(self, num=5, j=None, sort_by_ratio=False):
-        if j is not None:
-            last = j
-        else:
+    def find_interesting_BHs(self, num=5, first=0, last=None, sort_by_ratio=False):
+        """
+        find particle ids of BHs with the most significantly BH accretion
+        if the first snapshot number is not given, we simply check the final mass
+        """
+        if last is None:
             last = self.last
-        sp0 = snapshot(self.folder+'/snapshot_%03d.hdf5'%0)
-        sp1 = snapshot(self.folder+'/snapshot_%03d.hdf5'%(last))
-        if sort_by_ratio:
-            dm = sp1.bh_sorted('Masses')/sp0.bh_sorted('Masses')
+        sp1 = snapshot(self.folder+'/snapshot_%03d.hdf5'%last)
+        if first is not None:
+            sp0 = snapshot(self.folder+'/snapshot_%03d.hdf5'%first)
+            if sort_by_ratio:
+                dm = sp1.bh_sorted('Masses')/sp0.bh_sorted('Masses')
+            else:
+                dm = sp1.bh_sorted('Masses')-sp0.bh_sorted('Masses')
         else:
-            dm = sp1.bh_sorted('Masses')-sp0.bh_sorted('Masses')
-        return sp0.bh_sorted('ParticleIDs')[(-dm).argsort()][:num]
+            dm = sp1.bh_sorted('Masses')
+            dm *= (sp1.bh_sorted('ProtoStellarStage')==7)
+        return sp1.bh_sorted('ParticleIDs')[(-dm).argsort()][:num]
+            
     
     def find_fastest_growth_snapshot(self, num=5, bhid=None, sort_by_ratio=False):
         ms = []

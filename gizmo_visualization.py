@@ -192,8 +192,8 @@ def add_sizebar(ax, size, label, color='w'):
 
 def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], 
                            cmap='inferno', vmin=None, vmax=None, bhids=[], show_time=True, freefall_time_in_sim_unit=None,
-                           maxstars=1e10, force_aspect=True, show_sizebar=True, show_axes=False, message=None, axes_scale=1,
-                           star_part_type='PartType4', axes=None):
+                           maxstars=1e10, force_aspect=True, show_sizebar=True, sizebar=None, show_axes=False, message=None, axes_scale=1,
+                           star_part_type='PartType4', axes=None, supernovae=False):
     '''
     Make quick plot including gas, BHs, stars.
     axes : iterable, axes to show, e.g., (0, 1) means (x, y)
@@ -231,6 +231,11 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0],
         print('Number of stars:', len(pos))
         if len(pos)>=maxstars:
             pos = pos[np.random.choice(np.arange(len(pos)), int(maxstars*np.tanh(len(pos)/maxstars)), replace=False)] # tweak this
+        if supernovae:
+            t_sf = sp.star('StellarFormationTime', part_type=star_part_type)
+            t_sp = sp.time
+            crit = np.abs((t_sp - t_sf)*sp.UnitTime_In_Yr - 3.75e6)<0.25*1e6
+            pos = pos[crit]
         ax.scatter(pos[:,0], pos[:,1], c='lime', s=1)
     except:
         print('No stars')
@@ -260,7 +265,9 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0],
         ax.annotate(txt, (height*axes_scale*72-6, height*axes_scale*72-12), 
                     xycoords='axes points', color='w', va='top', ha='right')
     if show_sizebar:
-        add_sizebar(ax, rmax/2, r'\textbf{%g\,pc}'%(rmax*1000/2))
+        if sizebar is None:
+            sizebar = rmax/2
+        add_sizebar(ax, sizebar, r'\textbf{%g\,pc}'%(sizebar*1000))
 
     if not show_axes:
         ax.set_xticklabels([])
