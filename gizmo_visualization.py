@@ -236,7 +236,7 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0],
             t_sp = sp.time
             crit = np.abs((t_sp - t_sf)*sp.UnitTime_In_Yr - 3.75e6)<0.25*1e6
             pos = pos[crit]
-        ax.scatter(pos[:,0], pos[:,1], c='lime', s=1)
+        ax.scatter(pos[:,0], pos[:,1], c='lime', s=1, linewidths=0)
     except:
         print('No stars')
         pass
