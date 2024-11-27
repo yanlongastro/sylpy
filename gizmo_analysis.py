@@ -218,6 +218,13 @@ class snapshot:
             print("More than one particles have the same ID, should be an issue!")
         bhpid = bhpid[0][0]
         return self.f['PartType5'][attr][()][bhpid]
+
+    def single_particle(self, pid, part_type, attr):
+        bhpid = np.where(self.f[part_type]['ParticleIDs'][()]==pid)
+        if len(bhpid)>1:
+            print("More than one particles have the same ID, should be an issue!")
+        bhpid = bhpid[0][0]
+        return self.f[part_type][attr][()][bhpid]
             
     def find_gas_near_bh(self, bhid=1, kneighbor=96, drmax=10086, p_norm=2, center=None):
         if center is None:

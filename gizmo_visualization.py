@@ -191,7 +191,7 @@ def add_sizebar(ax, size, label, color='w'):
     ax.add_artist(asb)
 
 def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], 
-                           cmap='inferno', vmin=None, vmax=None, bhids=[], show_time=True, freefall_time_in_sim_unit=None,
+                           cmap='inferno', vmin=None, vmax=None, bhids=[], starids=[], show_time=True, freefall_time_in_sim_unit=None,
                            maxstars=1e10, force_aspect=True, show_sizebar=True, sizebar=None, show_axes=False, message=None, axes_scale=1,
                            star_part_type='PartType4', axes=None, supernovae=False):
     '''
@@ -226,20 +226,29 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0],
     ax.pcolormesh(X, Y, sdmap, cmap=cmap, norm=colors.LogNorm(vmin=vmin, vmax=vmax), shading='auto')
 
     sp = ga.snapshot(filename)
-    try:
-        pos = sp.star('Coordinates', part_type=star_part_type)
-        print('Number of stars:', len(pos))
-        if len(pos)>=maxstars:
-            pos = pos[np.random.choice(np.arange(len(pos)), int(maxstars*np.tanh(len(pos)/maxstars)), replace=False)] # tweak this
-        if supernovae:
-            t_sf = sp.star('StellarFormationTime', part_type=star_part_type)
-            t_sp = sp.time
-            crit = np.abs((t_sp - t_sf)*sp.UnitTime_In_Yr - 3.75e6)<0.25*1e6
-            pos = pos[crit]
-        ax.scatter(pos[:,0], pos[:,1], c='lime', s=1, linewidths=0)
-    except:
-        print('No stars')
-        pass
+
+    if len(starids)>0: # if star ids are given, just only show stars desired
+        for star_id in starids:
+            try:
+                pos = sp.single_particle(star_id, star_part_type, "Coordinates")
+                ax.scatter(pos[0], pos[1], c='lime', s=5, linewidths=0)
+            except:
+                pass
+    else: # or show stars randomly
+        try:
+            pos = sp.star('Coordinates', part_type=star_part_type)
+            print('Number of stars:', len(pos))
+            if len(pos)>=maxstars:
+                pos = pos[np.random.choice(np.arange(len(pos)), int(maxstars*np.tanh(len(pos)/maxstars)), replace=False)] # tweak this
+            if supernovae:
+                t_sf = sp.star('StellarFormationTime', part_type=star_part_type)
+                t_sp = sp.time
+                crit = np.abs((t_sp - t_sf)*sp.UnitTime_In_Yr - 3.75e6)<0.25*1e6
+                pos = pos[crit]
+            ax.scatter(pos[:,0], pos[:,1], c='lime', s=1, linewidths=0)
+        except:
+            print('No stars')
+            pass
     ax.set_xlim(-rmax+center[0], rmax+center[0])
     ax.set_ylim(-rmax+center[1], rmax+center[1])
     
