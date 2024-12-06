@@ -11,7 +11,7 @@ import h5py
 def read_snapshot(file):
     with h5py.File(file,"r") as F:
         pdata = {}
-        for field in "Masses", "Coordinates", "SmoothingLength", "Velocities", "MagneticField", "Pressure", "ElectronAbundance", "SoundSpeed", "Density", "ParticleIDs":
+        for field in F["PartType0"].keys():
             pdata[field] = F["PartType0"][field][:]
     return pdata
 
@@ -22,27 +22,29 @@ def reorder_pdata(pdata, axes=None):
     """
     if axes is not None:
         assert len(axes)==3
-        for field in "Coordinates", "Velocities", "MagneticField":
-            pdata[field] = (pdata[field].T)[axes].T
+        for field in pdata.keys():
+            if pdata[field].ndim>1:
+                pdata[field] = (pdata[field].T)[axes].T
     return pdata
 
 
 def box_cut(pdata, center, halfbox, field='Masses', ord=np.inf, nroll=0):
+    """
+    """
     pos = pdata["Coordinates"]
     center = np.array(center)
     radius_cut = np.linalg.norm(pos-center, ord=ord, axis=1) <= halfbox
-    pos, mass, hsml, v = pos[radius_cut], pdata[field][radius_cut], \
-    pdata["SmoothingLength"][radius_cut], pdata["Velocities"][radius_cut]
+    pos, mass, hsml, Veff = pos[radius_cut], pdata[field][radius_cut], \
+    pdata["SmoothingLength"][radius_cut], pdata["Masses"][radius_cut]/pdata["Density"][radius_cut]
     print("Number of gas particles:", len(pos))
 
     # nroll=0, (x, y, z)
     pos = np.roll(pos, nroll, axis=1)
-    v = np.roll(v, nroll, axis=1)
     if mass.ndim==2:
         mass = np.roll(mass, nroll, axis=1)
     pos = np.roll(pos, nroll)
 
-    return pos, mass, hsml, v
+    return pos, mass, hsml, Veff
 
 
 def create_meshoid_map(pos, mass, hsml, rmax, res=800, xc=np.array([0,0,0]), method='SurfaceDensity'):
@@ -190,13 +192,17 @@ def add_sizebar(ax, size, label, color='w'):
                           frameon=False)
     ax.add_artist(asb)
 
-def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], 
-                           cmap='inferno', vmin=None, vmax=None, bhids=[], starids=[], show_time=True, freefall_time_in_sim_unit=None,
+def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masses", component=-1, method="SurfaceDensity", text_color='w',
+                           cmap='inferno', vmin=None, vmax=None, logscale=True, bhids=[], starids=[], show_time=True, freefall_time_in_sim_unit=None,
                            maxstars=1e10, force_aspect=True, show_sizebar=True, sizebar=None, show_axes=False, message=None, axes_scale=1,
                            star_part_type='PartType4', axes=None, supernovae=False):
     '''
     Make quick plot including gas, BHs, stars.
     axes : iterable, axes to show, e.g., (0, 1) means (x, y)
+    component: for vectors, determine which component to show, 
+                -1, show the norm
+                0, 1, 2, Cartisian components
+                3, projected 2d radial velocity relative to the center
     '''
     if force_aspect:
         ax.set_aspect('equal')
@@ -213,17 +219,33 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0],
     center = np.array(center)[axes]
     print(center)
 
-    pos, mass, hsml, v = box_cut(pdata, np.array(center), rmax)
+    pos, f, hsml, veff = box_cut(pdata, np.array(center), rmax, field=field)
     if len(pos)==0: ## in case there are no particles in the view
         pos = np.array([center])
-        mass = np.array([1e-100])
+        f = np.array([1e-100])
         hsml = np.array([rmax])
         vmin = 1e-100
         vmax = 1e-100
-    X, Y, sdmap = create_meshoid_map(pos, mass, hsml, rmax, res=800, xc=np.array(center), method='SurfaceDensity')
+    if f.ndim>1: # if this field is not a scalar
+        if component==-1:
+            f = np.linalg.norm(f, axis=-1)
+        elif component in [0, 1, 2]:
+            f = f[:,component]
+        elif component==3: # projected radial velocity relative to the center
+            vec = pos[:,:2]-center[:2]
+            vec = vec/np.linalg.norm(vec, axis=-1)[:,np.newaxis]
+            f = np.sum(f[:,:2]*vec, axis=-1)
+        f *= veff # make it volume integrated
+        if method=="SurfaceDensity":
+            f /= (rmax*2) # show the line-averaged map
+
+    X, Y, sdmap = create_meshoid_map(pos, f, hsml, rmax, res=800, xc=np.array(center), method=method)
     if vmin is not None:
         sdmap[sdmap<vmin] = vmin
-    ax.pcolormesh(X, Y, sdmap, cmap=cmap, norm=colors.LogNorm(vmin=vmin, vmax=vmax), shading='auto')
+    if logscale:
+        ax.pcolormesh(X, Y, sdmap, cmap=cmap, norm=colors.LogNorm(vmin=vmin, vmax=vmax), shading='auto')
+    else:
+        ax.pcolormesh(X, Y, sdmap, cmap=cmap, vmin=vmin, vmax=vmax, shading='auto')
 
     sp = ga.snapshot(filename)
 
@@ -272,11 +294,11 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0],
         else:
             txt = r'\textbf{%.3f\,Myr (%.2f\, $\mathbf{t_{\rm ff}}$)}'%(sp.time_in_yr/1e6, sp.time/freefall_time_in_sim_unit)
         ax.annotate(txt, (height*axes_scale*72-6, height*axes_scale*72-12), 
-                    xycoords='axes points', color='w', va='top', ha='right')
+                    xycoords='axes points', color=text_color, va='top', ha='right')
     if show_sizebar:
         if sizebar is None:
             sizebar = rmax/2
-        add_sizebar(ax, sizebar, r'\textbf{%g\,pc}'%(sizebar*1000))
+        add_sizebar(ax, sizebar, r'\textbf{%g\,pc}'%(sizebar*1000), color=text_color)
 
     if not show_axes:
         ax.set_xticklabels([])
@@ -289,5 +311,5 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0],
         })
     if message is not None:
         ax.annotate(message, (6, 6), 
-                xycoords='axes points', color='w', va='bottom', ha='left')
+                xycoords='axes points', color=text_color, va='bottom', ha='left')
     return X, Y, sdmap

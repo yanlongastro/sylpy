@@ -13,11 +13,11 @@ class cluster:
         self.half_mass_radius_3d = half_mass_radius(mass, position, projection='3d')
         self.half_mass_radius_2d = half_mass_radius(mass, position, projection='2d')
 
-    def mass_profile(self, dN=100, dr=None, dlogr=None, cdf=False, projection='3d'):
+    def mass_profile(self, dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
         return spherical_density_profile(self.mass, self.position, dN=dN, dr=dr, dlogr=dlogr, cdf=cdf, projection=projection)
 
 
-def spherical_density_profile(mass, position, dN=100, dr=None, dlogr=None, cdf=False, projection='3d'):
+def spherical_density_profile(mass, position, dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
     """
     For a given mass dist, return the mass profile
 
@@ -75,7 +75,7 @@ def spherical_density_profile(mass, position, dN=100, dr=None, dlogr=None, cdf=F
         i += step
     return np.array(r), np.array(rho)
 
-def half_mass_radius(mass, position, projection='3d'):
+def half_mass_radius(mass, position, projection='3d', rmax=None):
     if projection=='3d':
         radius = np.linalg.norm(position, axis=-1)
     if projection=='2d':
@@ -84,5 +84,9 @@ def half_mass_radius(mass, position, projection='3d'):
     radius = radius[sort]
     mass = mass[sort]
     cum_mass = np.cumsum(mass)
+    if rmax is not None:
+        sort = radius<rmax
+        radius = radius[sort]
+        cum_mass = cum_mass[sort]
     r_m = interpolate.InterpolatedUnivariateSpline(cum_mass, radius)
     return r_m(cum_mass[-1]/2)
