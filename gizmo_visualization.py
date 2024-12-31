@@ -5,7 +5,7 @@ from scipy import stats
 from . import gizmo_analysis as ga
 import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-import matplotlib as plt
+import matplotlib as mpl
 import h5py
 
 def read_snapshot(file):
@@ -193,16 +193,17 @@ def add_sizebar(ax, size, label, color='w'):
     ax.add_artist(asb)
 
 def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masses", component=-1, method="SurfaceDensity", text_color='w',
-                           cmap='inferno', vmin=None, vmax=None, logscale=True, bhids=[], starids=[], show_time=True, freefall_time_in_sim_unit=None,
+                           cmap='inferno', vmin=None, vmax=None, logscale=True, nan_filling=None, bhids=[], starids=[], show_time=True, freefall_time_in_sim_unit=None,
                            maxstars=1e10, force_aspect=True, show_sizebar=True, sizebar=None, show_axes=False, message=None, axes_scale=1,
                            star_part_type='PartType4', axes=None, supernovae=False):
     '''
     Make quick plot including gas, BHs, stars.
     axes : iterable, axes to show, e.g., (0, 1) means (x, y)
-    component: for vectors, determine which component to show, 
+    component : int, for vectors, determine which component to show, 
                 -1, show the norm
                 0, 1, 2, Cartisian components
                 3, projected 2d radial velocity relative to the center
+    nan_filling : float in [0, 1], fill nans in imshow() with colors extracted from the colormap
     '''
     if force_aspect:
         ax.set_aspect('equal')
@@ -236,8 +237,8 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
             vec = vec/np.linalg.norm(vec, axis=-1)[:,np.newaxis]
             f = np.sum(f[:,:2]*vec, axis=-1)
         f *= veff # make it volume integrated
-        if method=="SurfaceDensity":
-            f /= (rmax*2) # show the line-averaged map
+    if method=="SurfaceDensity":
+        f /= (rmax*2) # show the line-averaged map
 
     X, Y, sdmap = create_meshoid_map(pos, f, hsml, rmax, res=800, xc=np.array(center), method=method)
     if vmin is not None:
@@ -306,10 +307,12 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
         ax.set_yticklabels([])
         ax.set_yticks([])
         ax.set_facecolor((1.0, 0.0, 0.0, 0.0))
-        plt.rcParams.update({
+        mpl.rcParams.update({
             "figure.facecolor":  (1.0, 0.0, 0.0, 0.0),  # red   with alpha = 30%
         })
     if message is not None:
         ax.annotate(message, (6, 6), 
                 xycoords='axes points', color=text_color, va='bottom', ha='left')
+    if nan_filling is not None:
+        ax.set_facecolor(mpl.cm.get_cmap(cmap)(nan_filling))
     return X, Y, sdmap
