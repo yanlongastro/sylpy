@@ -51,7 +51,10 @@ def show_info(fin):
             
 
             
-def par_path(path, skip=1):
+def parse_path(path, skip=0):
+    """
+    get numbers from a string like M1e8_R50
+    """
     match_number = re.compile('-?\ *[0-9]+\.?[0-9]*(?:[Ee]\ *-?\ *[0-9]+)?')
     num_list = [float(x) for x in re.findall(match_number, path)]
     return num_list[skip:]
@@ -128,7 +131,7 @@ def set_job_name(ic, skip=0):
     else:
         job_name = 'M'
 
-    par = par_path(ic, skip=skip)
+    par = parse_path(ic, skip=skip)
     M = par[0]
     R = par[1]
     Res = int(par[5])

@@ -203,7 +203,8 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
                 -1, show the norm
                 0, 1, 2, Cartisian components
                 3, projected 2d radial velocity relative to the center
-    nan_filling : float in [0, 1], fill nans in imshow() with colors extracted from the colormap
+    nan_filling : float in [0, 1], default to None
+                fill nans in imshow() with colors extracted from the colormap
     '''
     if force_aspect:
         ax.set_aspect('equal')
