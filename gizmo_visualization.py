@@ -188,7 +188,7 @@ def add_sizebar(ax, size, label, color='w'):
                           size,
                           label,
                           loc='upper left',
-                          pad=0.1, borderpad=0.5, sep=5, color=color,
+                          pad=0., borderpad=0.5, sep=5, color=color,
                           frameon=False)
     ax.add_artist(asb)
 
@@ -292,10 +292,10 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
         if force_aspect:
             width = height = np.min([width, height])
         if freefall_time_in_sim_unit is None:
-            txt = r'\textbf{%.3f\,Myr}'%(sp.time_in_yr/1e6)
+            txt = r'\textbf{%.2g\,Myr}'%(sp.time_in_yr/1e6)
         else:
-            txt = r'\textbf{%.3f\,Myr (%.2f\, $\mathbf{t_{\rm ff}}$)}'%(sp.time_in_yr/1e6, sp.time/freefall_time_in_sim_unit)
-        ax.annotate(txt, (height*axes_scale*72-6, height*axes_scale*72-12), 
+            txt = r'\textbf{%.2g\,Myr\,(%.2g\,$\mathbf{t_{\rm ff}}$)}'%(sp.time_in_yr/1e6, sp.time/freefall_time_in_sim_unit)
+        ax.annotate(txt, (height*axes_scale*72-5, height*axes_scale*72-9.5), 
                     xycoords='axes points', color=text_color, va='top', ha='right')
     if show_sizebar:
         if sizebar is None:

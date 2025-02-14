@@ -5,6 +5,7 @@ some functions to prepare and manage multiple simulations
 import subprocess
 import glob
 import os
+from . import gizmo_analysis as ga
 
 def replace_in_lines(lines, keyword, new):
     """
@@ -97,11 +98,39 @@ def get_job_status(folder='.', batch_name='submit.sh'):
     st = ''
     run_info = get_all_my_job_info(show_headers=False)
     for ii in run_info:
-        if job_name==ii[1]:
+        if job_name==ii[1] or job_name+'+'==ii[1]:
             st = ii[2]
+            break
     if 'R' in st:
         return 1, ii[0] # running
     if 'P' in st:
         return 0, ii[0] # pending
     if len(st)==0:
         return -1, None # stopped
+    
+def estimate_simulation_runtime(folder, diff=False, output_dir='output', snapshot_template='snapshot_%03d.hdf5', human=False):
+    sim_folder = folder+'/'+output_dir
+    n_snaps = ga.get_num_snaps(sim_folder)
+    if n_snaps<=1:
+        dt = 0.
+    else:
+        sp = sim_folder+'/'+snapshot_template
+        snap0 = (0 if not diff else n_snaps-2)
+        dt = os.path.getctime(sp%(n_snaps-1))-os.path.getctime(sp%(snap0))
+    if not human:
+        return dt
+    
+    if human:
+        dd = dt//86400
+        hh = (dt%86400)//3600
+        mm = (dt%3600)//60
+        ss = (dt%60)
+        res = ''
+        if dd>0:
+            res += '%dd '%dd
+        if hh>0:
+            res += '%dh '%hh
+        if mm>0:
+            res += "%d'"%mm
+        res += "%d\""%ss
+        return res

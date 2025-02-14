@@ -256,6 +256,8 @@ class snapshot:
     
 def get_num_snaps(path, snap='snapshot_*.hdf5', timed=True):
     fns = glob.glob1(path, snap)
+    if len(fns)<=1:
+        return len(fns)
     imax = 0
     tmax = 0.
     if not timed:
@@ -343,12 +345,14 @@ class simulation:
     """
     A series of snapshots in a single simulation.
     """
-    def __init__(self, folder, timed=True):
-        self.folder = folder
-        self.last = get_num_snaps(folder, timed=timed)-1
+    def __init__(self, folder, output='output', timed=True):
+        self.sim_folder = folder
+        self.output_folder = folder+'/'+output
+        self.last = get_num_snaps(self.output_folder, timed=timed)-1
+        self.snapshot_file = self.output_folder+'/snapshot_%03d.hdf5'
         
     def snapshot(self, i):
-        return snapshot(self.folder+'/snapshot_%03d.hdf5'%i)
+        return snapshot(self.snapshot_file%i)
         
     def find_interesting_BHs(self, num=5, first=0, last=None, sort_by_ratio=False):
         """
@@ -357,9 +361,9 @@ class simulation:
         """
         if last is None:
             last = self.last
-        sp1 = snapshot(self.folder+'/snapshot_%03d.hdf5'%last)
+        sp1 = snapshot(self.snapshot_file%last)
         if first is not None:
-            sp0 = snapshot(self.folder+'/snapshot_%03d.hdf5'%first)
+            sp0 = snapshot(self.snapshot_file%first)
             if sort_by_ratio:
                 dm = sp1.bh_sorted('Masses')/sp0.bh_sorted('Masses')
             else:
@@ -373,7 +377,7 @@ class simulation:
     def find_fastest_growth_snapshot(self, num=5, bhid=None, sort_by_ratio=False):
         ms = []
         for i in range(0, self.last+1):
-            sp = snapshot(self.folder+'/snapshot_%03d.hdf5'%i)
+            sp = snapshot(self.snapshot_file%i)
             if bhid == None:
                 ms.append(np.sum(sp.bh('Masses')))
             else:
@@ -389,8 +393,8 @@ class simulation:
         return (-dm).argsort()[:num]+1
     
     def find_fastest_growth_bh(self, spid, bhs):
-        sp0 = snapshot(self.folder+'/snapshot_%03d.hdf5'%(spid-1))
-        sp = snapshot(self.folder+'/snapshot_%03d.hdf5'%spid)
+        sp0 = snapshot(self.snapshot_file%(spid-1))
+        sp = snapshot(self.snapshot_file%spid)
         dbh = []
         for bh in bhs:
             dbh.append(sp.single_bh(bh, 'Masses') - sp0.single_bh(bh, 'Masses'))
@@ -400,9 +404,9 @@ class simulation:
         age = []
         history = []
         if difference is True:
-            sp0 = snapshot(self.folder+'/snapshot_%03d.hdf5'%0)
+            sp0 = snapshot(self.snapshot_file%0)
         for i in range(self.last+1):
-            sp = snapshot(self.folder+'/snapshot_%03d.hdf5'%i)
+            sp = snapshot(self.snapshot_file%i)
             try:
                 if bhid is not None:
                     temp = sp.single_bh(bhid, attr, )
@@ -441,7 +445,7 @@ class simulation:
         age = []
         history = []
         for i in range(self.last+1):
-            sp = snapshot(self.folder+'/snapshot_%03d.hdf5'%i)
+            sp = snapshot(self.snapshot_file%i)
             age.append(sp.time)
             history.append(np.sum(sp.star(attr)))
         return np.array(age), np.array(history)
@@ -469,7 +473,7 @@ class simulation:
         age = []
         history = []
         for i in range(self.last+1):
-            sp = snapshot(self.folder+'/snapshot_%03d.hdf5'%i)
+            sp = snapshot(self.snapshot_file%i)
             age.append(sp.time)
 
             if 'Volume' in attr:
