@@ -23,7 +23,7 @@ def reorder_pdata(pdata, axes=None):
     if axes is not None:
         assert len(axes)==3
         for field in pdata.keys():
-            if pdata[field].ndim>1:
+            if pdata[field].ndim>1 and pdata[field].shape[1]<=3:
                 pdata[field] = (pdata[field].T)[axes].T
     return pdata
 
@@ -37,7 +37,6 @@ def box_cut(pdata, center, halfbox, field='Masses', ord=np.inf, nroll=0):
     pos, mass, hsml, Veff = pos[radius_cut], pdata[field][radius_cut], \
     pdata["SmoothingLength"][radius_cut], pdata["Masses"][radius_cut]/pdata["Density"][radius_cut]
     print("Number of gas particles:", len(pos))
-
     # nroll=0, (x, y, z)
     pos = np.roll(pos, nroll, axis=1)
     if mass.ndim==2:
@@ -192,8 +191,10 @@ def add_sizebar(ax, size, label, color='w'):
                           frameon=False)
     ax.add_artist(asb)
 
-def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masses", component=-1, method="SurfaceDensity", text_color='w',
-                           cmap='inferno', vmin=None, vmax=None, logscale=True, nan_filling=None, bhids=[], starids=[], show_time=True, freefall_time_in_sim_unit=None,
+def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masses", component=-1, method="SurfaceDensity", 
+                           volume_weighted=False, line_averaged=True, mass_weighted=False, field_cutoff=None,
+                           text_color='w', cmap='inferno', vmin=None, vmax=None, 
+                           logscale=True, nan_filling=None, bhids=[], starids=[], show_time=True, freefall_time_in_sim_unit=None,
                            maxstars=1e10, force_aspect=True, show_sizebar=True, sizebar=None, show_axes=False, message=None, axes_scale=1,
                            star_part_type='PartType4', axes=None, supernovae=False):
     '''
@@ -202,7 +203,7 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
     component : int, for vectors, determine which component to show, 
                 -1, show the norm
                 0, 1, 2, Cartisian components
-                3, projected 2d radial velocity relative to the center
+                -2, projected 2d radial velocity relative to the center
     nan_filling : float in [0, 1], default to None
                 fill nans in imshow() with colors extracted from the colormap
     '''
@@ -219,7 +220,6 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
         axes = [0, 1, 2]
     pdata = reorder_pdata(pdata, axes)
     center = np.array(center)[axes]
-    print(center)
 
     pos, f, hsml, veff = box_cut(pdata, np.array(center), rmax, field=field)
     if len(pos)==0: ## in case there are no particles in the view
@@ -231,14 +231,20 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
     if f.ndim>1: # if this field is not a scalar
         if component==-1:
             f = np.linalg.norm(f, axis=-1)
-        elif component in [0, 1, 2]:
-            f = f[:,component]
-        elif component==3: # projected radial velocity relative to the center
+        elif component==-2: # projected radial velocity relative to the center
             vec = pos[:,:2]-center[:2]
             vec = vec/np.linalg.norm(vec, axis=-1)[:,np.newaxis]
             f = np.sum(f[:,:2]*vec, axis=-1)
+        elif component>=0:
+            f = f[:,component]
+    if volume_weighted:
         f *= veff # make it volume integrated
-    if method=="SurfaceDensity":
+    if mass_weighted:
+        _, m, _, _ = box_cut(pdata, np.array(center), rmax, field="Masses")
+        f *= m
+    if field_cutoff is not None:
+        f -= field_cutoff
+    if line_averaged:
         f /= (rmax*2) # show the line-averaged map
 
     X, Y, sdmap = create_meshoid_map(pos, f, hsml, rmax, res=800, xc=np.array(center), method=method)
@@ -255,7 +261,7 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
         for star_id in starids:
             try:
                 pos = sp.single_particle(star_id, star_part_type, "Coordinates")
-                ax.scatter(pos[0], pos[1], c='lime', s=5, linewidths=0)
+                ax.scatter(pos[axes[0]], pos[axes[1]], c='lime', s=5, linewidths=0)
             except:
                 pass
     else: # or show stars randomly
@@ -269,19 +275,19 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
                 t_sp = sp.time
                 crit = np.abs((t_sp - t_sf)*sp.UnitTime_In_Yr - 3.75e6)<0.25*1e6
                 pos = pos[crit]
-            ax.scatter(pos[:,0], pos[:,1], c='lime', s=1, linewidths=0)
+            ax.scatter(pos[:,axes[0]], pos[:,axes[1]], c='lime', s=1, linewidths=0)
         except:
             print('No stars')
             pass
-    ax.set_xlim(-rmax+center[0], rmax+center[0])
-    ax.set_ylim(-rmax+center[1], rmax+center[1])
+    ax.set_xlim(-rmax+center[axes[0]], rmax+center[axes[0]])
+    ax.set_ylim(-rmax+center[axes[1]], rmax+center[axes[1]])
     
     if len(bhids)>0:
         xx = sp.single_bh(bhids[0], 'Coordinates')
-        ax.scatter(xx[0], xx[1], s=150, marker='*', c='k', edgecolors='none')
+        ax.scatter(xx[axes[0]], xx[axes[1]], s=150, marker='*', c='k', edgecolors='none')
     try:
         xx = sp.single_bh(bhids[1], 'Coordinates')
-        ax.scatter(xx[0], xx[1], s=90, marker='*', facecolors='none', edgecolors='k')
+        ax.scatter(xx[axes[0]], xx[axes[1]], s=90, marker='*', facecolors='none', edgecolors='k')
     except:
         pass
 
