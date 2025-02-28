@@ -217,5 +217,5 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
                 print('> %s'%jid_)
             print('')
         os.chdir('../')
-
+    print("** We have %d jobs in progress."%n_active)
     return n_active
