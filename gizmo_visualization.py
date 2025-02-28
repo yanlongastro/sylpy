@@ -228,6 +228,7 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
         hsml = np.array([rmax])
         vmin = 1e-100
         vmax = 1e-100
+	veff = 1e-100
     if f.ndim>1: # if this field is not a scalar
         if component==-1:
             f = np.linalg.norm(f, axis=-1)
@@ -239,7 +240,7 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
             f = f[:,component]
     if volume_weighted:
         f *= veff # make it volume integrated
-    if mass_weighted:
+    if mass_weighted and len(pos)>0:
         _, m, _, _ = box_cut(pdata, np.array(center), rmax, field="Masses")
         f *= m
     if field_cutoff is not None:
