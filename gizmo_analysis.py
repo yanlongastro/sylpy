@@ -19,6 +19,8 @@ G = 4*np.pi**2/(206265000**3/1e10/unit_time_in_yr**2)
 pc_in_cm = 3.086e+18
 Msun_in_g = 2e33
 Na = 6.02e23
+mp_in_g = 1.6726e-24
+
 
 
 def t_ff(M, R):
@@ -177,6 +179,9 @@ class snapshot:
             self.time = self.f['Header'].attrs['Time']
             self.UnitTime_In_CGS = self.f['Header'].attrs['UnitLength_In_CGS']/self.f['Header'].attrs['UnitVelocity_In_CGS']
             self.UnitTime_In_Yr = self.UnitTime_In_CGS/(86400*365)
+            self.UnitMass_In_CGS = self.f['Header'].attrs['UnitMass_In_CGS']
+            self.UnitDensity_In_CGS = self.f['Header'].attrs['UnitMass_In_CGS']/self.f['Header'].attrs['UnitLength_In_CGS']**3
+            self.UnitVelocity_In_CGS = self.f['Header'].attrs['UnitVelocity_In_CGS']
             self.time_in_yr = self.time*self.UnitTime_In_CGS/(86400*365)
             self.bh_sink_radius = self.f['Header'].attrs['Fixed_ForceSoftening_Keplerian_Kernel_Extent'][5]/2.8
         except:
