@@ -268,7 +268,10 @@ def get_num_snaps(path, snap='snapshot_*.hdf5', timed=True):
     if not timed:
         return len(fns)
     for i in range(1, len(fns)):
-        t = os.path.getmtime(os.path.join(path, 'snapshot_%03d.hdf5'%i))
+        file = os.path.join(path, 'snapshot_%03d.hdf5'%i)
+        if not os.path.exists(file):
+            break
+        t = os.path.getmtime(file)
         if t>tmax:
             imax += 1
             tmax = t
