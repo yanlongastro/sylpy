@@ -135,7 +135,7 @@ def get_job_status(folder='.', batch_name='submit.sh', system='slurm', username=
             break
     if 'R' in st:
         return 1, ii[0] # running
-    if 'P' in st:
+    if 'P' in st or 'Q' in st:
         return 0, ii[0] # pending
     if len(st)==0:
         return -1, None # stopped
