@@ -6,6 +6,7 @@ import subprocess
 import glob
 import os
 from . import gizmo_analysis as ga
+import re
 
 def replace_in_lines(lines, keyword, new):
     """
@@ -29,19 +30,47 @@ def update_and_save(template, output, replace_dict):
         with open(output, 'w+') as f_:
             f_.writelines("%s" % l for l in lines)
 
-def get_all_my_job_info(show_headers=True):
+
+def get_queue_job_ids_torque(username='yanlong'):
     """
-    get running information from squeue of slurm
+    get running information from squeue of torque
     """
-    cmd = "squeue -u yanlong --format='%.18i %.100j %.2t %.10M %.6D'"
+    cmd = "qstat -u %s | awk '{print $1}'"%username
     res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).stdout.decode('UTF-8').split('\n')
-    runs = []
-    for r in res:
-        if len(r.split())>0:
-            runs.append(r.split())
-    if show_headers:
-        print(runs[0])
-    return runs[1:]
+    ids = []
+    for s in res:
+        if bool(re.search(r'\d+', s)):
+            ids.append(s)
+    # print(ids)
+    return ids
+
+def get_all_my_job_info(show_headers=True, system='slurm', username='yanlong'):
+    """
+    get running information from squeue of slurm or torque
+    """
+    if system=='slurm':
+        cmd = "squeue -u %s --format='%.18i %.100j %.2t %.10M %.6D'"%username
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).stdout.decode('UTF-8').split('\n')
+        runs = []
+        for r in res:
+            if len(r.split())>0:
+                runs.append(r.split())
+        if show_headers:
+            print(runs[0])
+        return runs[1:]
+    if system=='torque':
+        ids = get_queue_job_ids_torque(username)
+        runs = []
+        for i in ids:
+            run = []
+            run.append(i)
+            for k in ['Job_Name', 'job_state', 'resources_used.walltime', 'Resource_List.nodect']:
+                cmd = "qstat -f %s | awk -F= '/%s/ {print $2}' | xargs"%(i, k)
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).stdout.decode('UTF-8').split('\n')[0]
+                run.append(res)
+            runs.append(run)
+        print(runs)
+        return runs
 
 
 def get_latest_jobid_in_folder(folder, digits=8):
@@ -90,13 +119,13 @@ def get_job_name_from_batch(file):
         strs = f.read().split()
         return strs[strs.index('-J')+1]
 
-def get_job_status(folder='.', batch_name='submit.sh'):
+def get_job_status(folder='.', batch_name='submit.sh', **kwargs):
     """
     get current status of the job, return the status and the job id
     """
     job_name = get_job_name_from_batch(folder+'/'+batch_name)
     st = ''
-    run_info = get_all_my_job_info(show_headers=False)
+    run_info = get_all_my_job_info(show_headers=False, **kwargs)
     for ii in run_info:
         if job_name==ii[1] or job_name+'+'==ii[1]:
             st = ii[2]
