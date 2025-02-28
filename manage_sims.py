@@ -114,18 +114,21 @@ def read_params(file):
     return res
 
 
-def get_job_name_from_batch(file):
+def get_job_name_from_batch(file, system='slurm'):
     with open(file) as f:
         strs = f.read().split()
-        return strs[strs.index('-J')+1]
+        if system=='slurm':
+            return strs[strs.index('-J')+1]
+        if system=='torque':
+            return strs[strs.index('-N')+1]
 
-def get_job_status(folder='.', batch_name='submit.sh', **kwargs):
+def get_job_status(folder='.', batch_name='submit.sh', system='slurm', username='yanlong'):
     """
     get current status of the job, return the status and the job id
     """
-    job_name = get_job_name_from_batch(folder+'/'+batch_name)
+    job_name = get_job_name_from_batch(folder+'/'+batch_name, system=system)
     st = ''
-    run_info = get_all_my_job_info(show_headers=False, **kwargs)
+    run_info = get_all_my_job_info(show_headers=False, system=system, username=username)
     for ii in run_info:
         if job_name==ii[1] or job_name+'+'==ii[1]:
             st = ii[2]
