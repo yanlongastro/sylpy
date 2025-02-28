@@ -210,6 +210,7 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
     if force_aspect:
         ax.set_aspect('equal')
     
+    sp = ga.snapshot(filename)
     pdata = read_snapshot(filename)
     if axes is not None: ## reoder to show the axes in order.
         axes = list(axes)
@@ -222,64 +223,64 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
     center = np.array(center)[axes]
 
     pos, f, hsml, veff = box_cut(pdata, np.array(center), rmax, field=field)
-    if len(pos)==0: ## in case there are no particles in the view
-        pos = np.array([center])
-        f = np.array([1e-100])
-        hsml = np.array([rmax])
-        vmin = 1e-100
-        vmax = 1e-100
-        empty_map = True
-    if f.ndim>1: # if this field is not a scalar
-        if component==-1:
-            f = np.linalg.norm(f, axis=-1)
-        elif component==-2: # projected radial velocity relative to the center
-            vec = pos[:,:2]-center[:2]
-            vec = vec/np.linalg.norm(vec, axis=-1)[:,np.newaxis]
-            f = np.sum(f[:,:2]*vec, axis=-1)
-        elif component>=0:
-            f = f[:,component]
-    if volume_weighted and not empty_map:
-        f *= veff # make it volume integrated
-    if mass_weighted and not empty_map:
-        _, m, _, _ = box_cut(pdata, np.array(center), rmax, field="Masses")
-        f *= m
-    if field_cutoff is not None:
-        f -= field_cutoff
-    if line_averaged:
-        f /= (rmax*2) # show the line-averaged map
+    if len(pos)>0: # there are particles in the map
+        empty_map = False
+        if f.ndim>1: # if this field is not a scalar
+            if component==-1:
+                f = np.linalg.norm(f, axis=-1)
+            elif component==-2: # projected radial velocity relative to the center
+                vec = pos[:,:2]-center[:2]
+                vec = vec/np.linalg.norm(vec, axis=-1)[:,np.newaxis]
+                f = np.sum(f[:,:2]*vec, axis=-1)
+            elif component>=0:
+                f = f[:,component]
+        if volume_weighted and not empty_map:
+            f *= veff # make it volume integrated
+        if mass_weighted and not empty_map:
+            _, m, _, _ = box_cut(pdata, np.array(center), rmax, field="Masses")
+            f *= m
+        if field_cutoff is not None:
+            f -= field_cutoff
+        if line_averaged:
+            f /= (rmax*2) # show the line-averaged map
 
-    X, Y, sdmap = create_meshoid_map(pos, f, hsml, rmax, res=800, xc=np.array(center), method=method)
-    if vmin is not None:
-        sdmap[sdmap<vmin] = vmin
-    if logscale:
-        ax.pcolormesh(X, Y, sdmap, cmap=cmap, norm=colors.LogNorm(vmin=vmin, vmax=vmax), shading='auto')
+        X, Y, sdmap = create_meshoid_map(pos, f, hsml, rmax, res=800, xc=np.array(center), method=method)
+        if vmin is not None:
+            sdmap[sdmap<vmin] = vmin
+        if logscale:
+            ax.pcolormesh(X, Y, sdmap, cmap=cmap, norm=colors.LogNorm(vmin=vmin, vmax=vmax), shading='auto')
+        else:
+            ax.pcolormesh(X, Y, sdmap, cmap=cmap, vmin=vmin, vmax=vmax, shading='auto')
+        if nan_filling is not None:
+            ax.set_facecolor(mpl.cm.get_cmap(cmap)(nan_filling))
     else:
-        ax.pcolormesh(X, Y, sdmap, cmap=cmap, vmin=vmin, vmax=vmax, shading='auto')
+        empty_map = True
 
-    sp = ga.snapshot(filename)
 
-    if len(starids)>0: # if star ids are given, just only show stars desired
-        for star_id in starids:
+    # show stars
+    if maxstars>0 or len(starids)>0:
+        if len(starids)>0: # if star ids are given, just only show stars desired
+            for star_id in starids:
+                try:
+                    pos = sp.single_particle(star_id, star_part_type, "Coordinates")
+                    ax.scatter(pos[axes[0]], pos[axes[1]], c='lime', s=5, linewidths=0)
+                except:
+                    pass
+        else: # or show stars randomly
             try:
-                pos = sp.single_particle(star_id, star_part_type, "Coordinates")
-                ax.scatter(pos[axes[0]], pos[axes[1]], c='lime', s=5, linewidths=0)
+                pos = sp.star('Coordinates', part_type=star_part_type)
+                print('Number of stars:', len(pos))
+                if len(pos)>=maxstars:
+                    pos = pos[np.random.choice(np.arange(len(pos)), int(maxstars*np.tanh(len(pos)/maxstars)), replace=False)] # tweak this
+                if supernovae:
+                    t_sf = sp.star('StellarFormationTime', part_type=star_part_type)
+                    t_sp = sp.time
+                    crit = np.abs((t_sp - t_sf)*sp.UnitTime_In_Yr - 3.75e6)<0.25*1e6
+                    pos = pos[crit]
+                ax.scatter(pos[:,axes[0]], pos[:,axes[1]], c='lime', s=1, linewidths=0)
             except:
+                print('No stars')
                 pass
-    else: # or show stars randomly
-        try:
-            pos = sp.star('Coordinates', part_type=star_part_type)
-            print('Number of stars:', len(pos))
-            if len(pos)>=maxstars:
-                pos = pos[np.random.choice(np.arange(len(pos)), int(maxstars*np.tanh(len(pos)/maxstars)), replace=False)] # tweak this
-            if supernovae:
-                t_sf = sp.star('StellarFormationTime', part_type=star_part_type)
-                t_sp = sp.time
-                crit = np.abs((t_sp - t_sf)*sp.UnitTime_In_Yr - 3.75e6)<0.25*1e6
-                pos = pos[crit]
-            ax.scatter(pos[:,axes[0]], pos[:,axes[1]], c='lime', s=1, linewidths=0)
-        except:
-            print('No stars')
-            pass
     ax.set_xlim(-rmax+center[axes[0]], rmax+center[axes[0]])
     ax.set_ylim(-rmax+center[axes[1]], rmax+center[axes[1]])
     
@@ -319,8 +320,7 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
             "figure.facecolor":  (1.0, 0.0, 0.0, 0.0),  # red   with alpha = 30%
         })
     if message is not None:
-        ax.annotate(message, (6, 6), 
-                xycoords='axes points', color=text_color, va='bottom', ha='left')
-    if nan_filling is not None:
-        ax.set_facecolor(mpl.cm.get_cmap(cmap)(nan_filling))
+        ax.annotate(message, (6, 6), xycoords='axes points', color=text_color, va='bottom', ha='left')
+    if empty_map:
+        return None, None, None
     return X, Y, sdmap
