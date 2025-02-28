@@ -69,7 +69,7 @@ def get_all_my_job_info(show_headers=True, system='slurm', username='yanlong'):
                 res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).stdout.decode('UTF-8').split('\n')[0]
                 run.append(res)
             runs.append(run)
-        print(runs)
+        #print(runs)
         return runs
 
 
