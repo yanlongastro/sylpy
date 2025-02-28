@@ -166,3 +166,56 @@ def estimate_simulation_runtime(folder, diff=False, output_dir='output', snapsho
             res += "%d'"%mm
         res += "%d\""%ss
         return res
+
+
+def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slurm'):
+    """
+    Display the status of the simulations and resubmit the stopped ones.
+    :param sims: list of simulation directories
+    :param resubmit: bool, whether to resubmit the stopped simulations
+    :param batch_name: str, name of the batch file
+    :param system: str, 'torque' or 'slurm'
+    :return: None
+    """
+    i = 0
+    n_active = 0
+    for sim in sims:
+        num_snaps = ga.get_num_snaps(sim+'/output')
+        st, jid = get_job_status(sim, batch_name=batch_name, system=system)
+        params = read_params(sim+'/params.txt')
+        num_snaps_max = params['TimeMax']/params['TimeBetSnapshot']
+        runtime = estimate_simulation_runtime(sim, human=True)
+        d_runtime = estimate_simulation_runtime(sim, human=True, diff=True)
+        pp = ga.parse_path(sim)
+        i += 1
+
+        print('%2d)'%i, end=' ')
+        print('%-40s'%sim, end='\t')
+        print(num_snaps-1, end='\t')
+        print('%-15s'%runtime, end='\t')
+        print('%-15s'%d_runtime, end='\t')
+        if st<0 and num_snaps>num_snaps_max:
+            print("Done!")
+            continue
+        n_active += 1
+        if st==1:
+            print("R  %s"%jid)
+        if st==0:
+            print("PD %s"%jid)
+
+        os.chdir(sim)
+        # remove strange core.* files
+        subprocess.run(["rm", "-f", "core.*"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if st==-1:
+            print('Stopped ', end='')
+            if resubmit: # in case of resubmit
+                if system == 'torque':
+                    res = subprocess.run(["qsub", "resubmit.cita"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if system == 'slurm':
+                    res = subprocess.run(["sbatch", "resubmit.sh"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                jid_ = res.stdout.decode('UTF-8').split()[-1]
+                print('> %s'%jid_)
+            print('')
+        os.chdir('../')
+
+    return n_active
