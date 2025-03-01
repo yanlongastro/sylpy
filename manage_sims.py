@@ -49,7 +49,7 @@ def get_all_my_job_info(show_headers=True, system='slurm', username='yanlong'):
     get running information from squeue of slurm or torque
     """
     if system=='slurm':
-        cmd = "squeue -u %s --format='%.18i %.100j %.2t %.10M %.6D'"%username
+        cmd = "squeue -u "+username+" --format='%.18i %.100j %.2t %.10M %.6D'"
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).stdout.decode('UTF-8').split('\n')
         runs = []
         for r in res:
@@ -161,9 +161,9 @@ def estimate_simulation_runtime(folder, diff=False, output_dir='output', snapsho
         if dd>0:
             res += '%dd '%dd
         if hh>0:
-            res += '%d:'%hh
+            res += '%dh '%hh
         if mm>0:
-            res += "%d:"%mm
+            res += "%d' "%mm
         res += "%d\""%ss
         return res
 
