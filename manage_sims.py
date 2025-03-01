@@ -161,9 +161,9 @@ def estimate_simulation_runtime(folder, diff=False, output_dir='output', snapsho
         if dd>0:
             res += '%dd '%dd
         if hh>0:
-            res += '%dh '%hh
+            res += '%d:'%hh
         if mm>0:
-            res += "%d'"%mm
+            res += "%d:"%mm
         res += "%d\""%ss
         return res
 
