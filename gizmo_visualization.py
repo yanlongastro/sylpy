@@ -251,10 +251,11 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
             ax.pcolormesh(X, Y, sdmap, cmap=cmap, norm=colors.LogNorm(vmin=vmin, vmax=vmax), shading='auto')
         else:
             ax.pcolormesh(X, Y, sdmap, cmap=cmap, vmin=vmin, vmax=vmax, shading='auto')
-        if nan_filling is not None:
-            ax.set_facecolor(mpl.cm.get_cmap(cmap)(nan_filling))
     else:
         empty_map = True
+
+    if nan_filling is not None:
+        ax.set_facecolor(mpl.cm.get_cmap(cmap)(nan_filling))
 
 
     # show stars

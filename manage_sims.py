@@ -192,7 +192,7 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
 
         print('%2d)'%i, end=' ')
         print('%-60s'%sim, end='\t')
-        print(num_snaps-1, end='\t')
+        print('%5d'%(num_snaps-1), end='\t')
         print('%-15s'%runtime, end='\t')
         print('%-15s'%d_runtime, end='\t')
         if st<0 and num_snaps>num_snaps_max:
