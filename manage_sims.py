@@ -179,6 +179,7 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
     """
     i = 0
     n_active = 0
+    cwd = os.getcwd()
     for sim in sims:
         num_snaps = ga.get_num_snaps(sim+'/output')
         st, jid = get_job_status(sim, batch_name=batch_name, system=system)
@@ -190,7 +191,7 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
         i += 1
 
         print('%2d)'%i, end=' ')
-        print('%-40s'%sim, end='\t')
+        print('%-60s'%sim, end='\t')
         print(num_snaps-1, end='\t')
         print('%-15s'%runtime, end='\t')
         print('%-15s'%d_runtime, end='\t')
@@ -216,6 +217,6 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
                 jid_ = res.stdout.decode('UTF-8').split()[-1]
                 print('> %s'%jid_)
             print('')
-        os.chdir('../')
+        os.chdir(cwd)
     print("** We have %d jobs in progress."%n_active)
     return n_active
