@@ -7,6 +7,7 @@ import glob
 import os
 from . import gizmo_analysis as ga
 import re
+import time
 
 def replace_in_lines(lines, keyword, new):
     """
@@ -140,7 +141,7 @@ def get_job_status(folder='.', batch_name='submit.sh', system='slurm', username=
     if len(st)==0:
         return -1, None # stopped
     
-def estimate_simulation_runtime(folder, diff=False, output_dir='output', snapshot_template='snapshot_%03d.hdf5', human=False):
+def estimate_simulation_runtime(folder, diff=False, t1=None, output_dir='output', snapshot_template='snapshot_%03d.hdf5', human=False):
     sim_folder = folder+'/'+output_dir
     n_snaps = ga.get_num_snaps(sim_folder)
     if n_snaps<=1:
@@ -149,6 +150,8 @@ def estimate_simulation_runtime(folder, diff=False, output_dir='output', snapsho
         sp = sim_folder+'/'+snapshot_template
         snap0 = (0 if not diff else n_snaps-2)
         dt = os.path.getctime(sp%(n_snaps-1))-os.path.getctime(sp%(snap0))
+        if diff and t1 is not None:
+            dt = t1-os.path.getctime(sp%(n_snaps-1))
     if not human:
         return dt
     
@@ -187,6 +190,7 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
         num_snaps_max = params['TimeMax']/params['TimeBetSnapshot']
         runtime = estimate_simulation_runtime(sim, human=True)
         d_runtime = estimate_simulation_runtime(sim, human=True, diff=True)
+        d_runtime_now = estimate_simulation_runtime(sim, human=True, diff=True, t1=time.time())
         pp = ga.parse_path(sim)
         i += 1
 
@@ -194,7 +198,7 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
         print('%-60s'%sim, end='\t')
         print('%5d'%(num_snaps-1), end='\t')
         print('%-15s'%runtime, end='\t')
-        print('%-15s'%d_runtime, end='\t')
+        print('%-25s'%(d_runtime+' > '+d_runtime_now), end='\t')
         if st<0 and num_snaps>num_snaps_max:
             print("Done!")
             continue
