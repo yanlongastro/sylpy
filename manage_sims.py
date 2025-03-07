@@ -8,6 +8,7 @@ import os
 from . import gizmo_analysis as ga
 import re
 import time
+from datetime import datetime
 
 def replace_in_lines(lines, keyword, new):
     """
@@ -183,6 +184,9 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
     i = 0
     n_active = 0
     cwd = os.getcwd()
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(current_time)
+    print('Current working directory: ' + cwd)
     for sim in sims:
         num_snaps = ga.get_num_snaps(sim+'/output')
         st, jid = get_job_status(sim, batch_name=batch_name, system=system)
@@ -212,12 +216,17 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
         # remove strange core.* files
         subprocess.run(["rm", "-f", "core.*"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if st==-1:
-            print('Stopped ', end='')
+            if num_snaps<=0:
+                exe = 'submit'
+                print('Start ', end='')
+            else:
+                exe = 'resubmit'
+                print('Stopped ', end='')
             if resubmit: # in case of resubmit
                 if system == 'torque':
-                    res = subprocess.run(["qsub", "resubmit.cita"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    res = subprocess.run(["qsub", "%s.cita"%exe], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 if system == 'slurm':
-                    res = subprocess.run(["sbatch", "resubmit.sh"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    res = subprocess.run(["sbatch", "%s.sh"%exe], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 jid_ = res.stdout.decode('UTF-8').split()[-1]
                 print('> %s'%jid_)
             print('')
