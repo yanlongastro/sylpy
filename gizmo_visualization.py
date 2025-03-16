@@ -193,10 +193,10 @@ def add_sizebar(ax, size, label, color='w'):
 
 def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masses", component=-1, method="SurfaceDensity", 
                            volume_weighted=False, line_averaged=True, mass_weighted=False, field_cutoff=None,
-                           text_color='w', cmap='inferno', vmin=None, vmax=None, 
-                           logscale=True, nan_filling=None, bhids=[], starids=[], show_time=True, freefall_time_in_sim_unit=None,
+                           text_color='w', cmap='inferno', vmin=None, vmax=None, map_unit_converter=None,
+                           logscale=True, nan_filling=0, bhids=[], starids=[], show_time=True, freefall_time_in_sim_unit=None,
                            maxstars=1e10, force_aspect=True, show_sizebar=True, sizebar=None, show_axes=False, message=None, axes_scale=1,
-                           star_part_type='PartType4', axes=None, supernovae=False):
+                           star_part_type='PartType4', stellar_stage=None, axes=None, supernovae=False):
     '''
     Make quick plot including gas, BHs, stars.
     axes : iterable, axes to show, e.g., (0, 1) means (x, y)
@@ -245,12 +245,14 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
             f /= (rmax*2) # show the line-averaged map
 
         X, Y, sdmap = create_meshoid_map(pos, f, hsml, rmax, res=800, xc=np.array(center), method=method)
+        if map_unit_converter is not None:
+            sdmap *= map_unit_converter
         if vmin is not None:
             sdmap[sdmap<vmin] = vmin
         if logscale:
-            ax.pcolormesh(X, Y, sdmap, cmap=cmap, norm=colors.LogNorm(vmin=vmin, vmax=vmax), shading='auto')
+            im = ax.pcolormesh(X, Y, sdmap, cmap=cmap, norm=colors.LogNorm(vmin=vmin, vmax=vmax), shading='auto')
         else:
-            ax.pcolormesh(X, Y, sdmap, cmap=cmap, vmin=vmin, vmax=vmax, shading='auto')
+            im = ax.pcolormesh(X, Y, sdmap, cmap=cmap, vmin=vmin, vmax=vmax, shading='auto')
     else:
         empty_map = True
 
@@ -264,20 +266,23 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
             for star_id in starids:
                 try:
                     pos = sp.single_particle(star_id, star_part_type, "Coordinates")
-                    ax.scatter(pos[axes[0]], pos[axes[1]], c='lime', s=5, linewidths=0)
+                    ax.scatter(pos[axes[0]], pos[axes[1]], c='blue', s=5, linewidths=0)
                 except:
                     pass
         else: # or show stars randomly
             try:
                 pos = sp.star('Coordinates', part_type=star_part_type)
                 print('Number of stars:', len(pos))
-                if len(pos)>=maxstars:
-                    pos = pos[np.random.choice(np.arange(len(pos)), int(maxstars*np.tanh(len(pos)/maxstars)), replace=False)] # tweak this
                 if supernovae:
                     t_sf = sp.star('StellarFormationTime', part_type=star_part_type)
                     t_sp = sp.time
                     crit = np.abs((t_sp - t_sf)*sp.UnitTime_In_Yr - 3.75e6)<0.25*1e6
                     pos = pos[crit]
+                if stellar_stage is not None:
+                    crit = sp.star('ProtoStellarStage', part_type=star_part_type) == stellar_stage
+                    pos = pos[crit]
+                if len(pos)>=maxstars:
+                    pos = pos[np.random.choice(np.arange(len(pos)), int(maxstars*np.tanh(len(pos)/maxstars)), replace=False)] # tweak this
                 ax.scatter(pos[:,axes[0]], pos[:,axes[1]], c='lime', s=1, linewidths=0)
             except:
                 print('No stars')
@@ -324,4 +329,4 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
         ax.annotate(message, (6, 6), xycoords='axes points', color=text_color, va='bottom', ha='left')
     if empty_map:
         return None, None, None
-    return X, Y, sdmap
+    return X, Y, sdmap, im
