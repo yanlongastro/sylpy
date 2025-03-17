@@ -22,5 +22,5 @@ class remnant_mass:
         self.x, self.y, self.z = unpack_interpolation_table(file=package_dir+'/data/SperaMapelli2017.txt')
         self.mrem = interpolate.RectBivariateSpline(self.x, self.y, self.z, kx=1, ky=1)
     def __call__(self, mass, metallicity):
-        return self.mrem(metallicity, mass)[0][0]
+        return self.mrem(metallicity, mass).T
         
