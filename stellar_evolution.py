@@ -20,7 +20,9 @@ class remnant_mass:
     """
     def __init__(self):
         self.x, self.y, self.z = unpack_interpolation_table(file=package_dir+'/data/SperaMapelli2017.txt')
-        self.mrem = interpolate.RectBivariateSpline(self.x, self.y, self.z, kx=1, ky=1)
+        #self.mrem = interpolate.RectBivariateSpline(self.x, self.y, self.z, kx=1, ky=1)
+        self.mrem = lambda x, y: interpolate.interpn((self.x, self.y), self.z, np.array([x, y]), method='linear')[0]\
+                                *(interpolate.interpn((self.x, self.y), self.z, np.array([x, y]), method='nearest')[0]>2)
     def __call__(self, mass, metallicity):
-        return self.mrem(metallicity, mass).T
+        return self.mrem(metallicity, mass)
         
