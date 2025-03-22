@@ -61,6 +61,7 @@ def spherical_density_profile(mass, position, dN=100, dr=None, dlogr=0.05, cdf=F
         if dlogr is not None:
             while np.log10(radius[i+step]/radius[i])<dlogr:
                 step += 1
+        step = min(step, len(mass)-1-i)
         dM = np.sum(mass[i:i+step])
         r1 = radius[i+step] 
         r0 = radius[i]
