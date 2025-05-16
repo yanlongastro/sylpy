@@ -267,8 +267,8 @@ class snapshot:
             part_type = "PartType"+str(type)
             if part_type in list(self.f.keys()):
                 res.append(self.f[part_type][attr][()])
-            else:
-                res.append(np.array([]))
+            # else:
+            #     res.append(np.array([]))
         return np.concatenate(res)
     
     
