@@ -257,6 +257,20 @@ class snapshot:
             inds = np.array([inds])
         return inds[dist!=np.inf]
     
+    def multi_type_particles(self, types, attr):
+        """
+        types: a list of strings, e.g., ['PartType0', 'PartType4']
+        attr: the attribute to be returned
+        """
+        res = []
+        for type in types:
+            part_type = "PartType"+str(type)
+            if part_type in list(self.f.keys()):
+                res.append(self.f[part_type][attr][()])
+            else:
+                res.append(np.array([]))
+        return np.concatenate(res)
+    
     
     
 def get_num_snaps(path, snap='snapshot_*.hdf5', timed=True):
