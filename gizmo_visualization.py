@@ -328,5 +328,5 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
     if message is not None:
         ax.annotate(message, (6, 6), xycoords='axes points', color=text_color, va='bottom', ha='left')
     if empty_map:
-        return None, None, None
+        return None, None, None, None
     return X, Y, sdmap, im
