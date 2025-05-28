@@ -50,7 +50,7 @@ def chabrier_imf(m):
     return r1*(m<=1) + r2*(m>1)
 
 class imf:
-    def __init__(self, imf_function, m_min=0.001, m_max=300):
+    def __init__(self, imf_function, m_min=0.01, m_max=300):
         """
         imf_function : callable
             IMF, doesn't need to be normalized
@@ -84,11 +84,19 @@ class imf:
             m += dm
         return np.array(res)
     
+    def imf_integral(self, m0, m1, moment=0):
+        m0 = max(m0, self.m_min)
+        m0 = min(m0, self.m_max)
+        m1 = min(m1, self.m_max)
+        assert m0<=m1, "m0 must be less than m1"
+        func = lambda x: self.imf(x)*x**moment
+        return integrate.quad(func, m0, m1)[0]
+    
 def integral_power_law(x0, x1, c, s):
     return (s==-1)*c*np.log(x1/x0) + (s!=-1)*c*(x1**(s+1)-x0**(s+1))/(s+1+1e-100)
 
 
-def kroupa_imf_normalized(m, m_min=0.001, m_max=300, slopes=[-0.3, -1.3, -2.3, -2.3], cdf=False, mass_weighted=False):
+def kroupa_imf_normalized(m, m_min=0.01, m_max=300, slopes=[-0.3, -1.3, -2.3, -2.3], cdf=False, mass_weighted=False):
     m0 = 0.08
     m1 = 0.5
     m2 = 1
