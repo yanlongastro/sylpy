@@ -177,6 +177,7 @@ class snapshot:
             self.star_number = self.f['Header'].attrs['NumPart_ThisFile'][4]
             self.bh_number = self.f['Header'].attrs['NumPart_ThisFile'][5]
             self.time = self.f['Header'].attrs['Time']
+            self.UnitLength_In_CGS = self.f['Header'].attrs['UnitLength_In_CGS']
             self.UnitTime_In_CGS = self.f['Header'].attrs['UnitLength_In_CGS']/self.f['Header'].attrs['UnitVelocity_In_CGS']
             self.UnitTime_In_Yr = self.UnitTime_In_CGS/(86400*365)
             self.UnitMass_In_CGS = self.f['Header'].attrs['UnitMass_In_CGS']

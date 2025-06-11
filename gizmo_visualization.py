@@ -195,7 +195,8 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
                            volume_weighted=False, line_averaged=True, mass_weighted=False, field_cutoff=None,
                            text_color='w', cmap='inferno', vmin=None, vmax=None, map_unit_converter=None,
                            logscale=True, nan_filling=0, bhids=[], starids=[], show_time=True, freefall_time_in_sim_unit=None,
-                           maxstars=1e10, force_aspect=True, show_sizebar=True, sizebar=None, show_axes=False, message=None, axes_scale=1,
+                           maxstars=1e10, force_aspect=True, show_sizebar=True, sizebar=None, sizebar_unit='pc',
+                           show_axes=False, message=None, axes_scale=1,
                            star_part_type='PartType4', stellar_stage=None, axes=None, supernovae=False):
     '''
     Make quick plot including gas, BHs, stars.
@@ -211,6 +212,7 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
         ax.set_aspect('equal')
     
     sp = ga.snapshot(filename)
+    unit_length_in_pc = sp.f['Header'].attrs['UnitLength_In_CGS']/3.08568e+18
     pdata = read_snapshot(filename)
     if axes is not None: ## reoder to show the axes in order.
         axes = list(axes)
@@ -314,7 +316,10 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
     if show_sizebar:
         if sizebar is None:
             sizebar = rmax/2
-        add_sizebar(ax, sizebar, r'\textbf{%g\,pc}'%(sizebar*1000), color=text_color)
+        if sizebar_unit == 'pc':
+            add_sizebar(ax, sizebar, r'\textbf{%g\,%s}'%(sizebar*unit_length_in_pc, sizebar_unit), color=text_color)
+        if sizebar_unit == 'kpc':
+            add_sizebar(ax, sizebar, r'\textbf{%g\,%s}'%(sizebar*unit_length_in_pc*1000, sizebar_unit), color=text_color)
 
     if not show_axes:
         ax.set_xticklabels([])
