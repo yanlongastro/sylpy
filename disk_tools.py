@@ -52,10 +52,17 @@ def get_radial_profile(value, position, component=None, method='density', percen
         dV = (r1**2-r0**2)*np.pi
         
         if method=='density':
-            dM = np.sum(selected_value)
+            dM = np.sum(selected_value, axis=0)
             res_tmp = dM/dV
         if method=='average':
-            res_tmp = np.mean(selected_value)
+            res_tmp = np.mean(selected_value, axis=0)
+        if method=='median':
+            res_tmp = np.median(selected_value, axis=0)
+        if method=='percentile':
+            assert percentiles is not None, "percentiles must be provided for method='percentiles'"
+            res_tmp = np.percentile(selected_value, percentiles, axis=0)
+        if method=='std':
+            res_tmp = np.std(selected_value, axis=0)
         r_tmp = (r0+r1)/2
         r.append(r_tmp)
         res.append(res_tmp)
