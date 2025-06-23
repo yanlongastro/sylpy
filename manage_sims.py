@@ -100,6 +100,10 @@ def read_params(file):
         ls = line.split()
         if len(ls)>=2:
             res[ls[0]] = ls[1]
+
+    for k in ['UnitMass_in_g', 'UnitLength_in_cm', 'UnitVelocity_in_cm_per_s', 'UnitMagneticField_in_gauss']:
+        if not (k in res.keys()):
+            res[k] = 1.
             
     # convert strings to correct forms of values
     for k in res.keys():

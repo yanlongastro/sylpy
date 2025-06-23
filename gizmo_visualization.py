@@ -317,9 +317,11 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
         if sizebar is None:
             sizebar = rmax/2
         if sizebar_unit == 'pc':
-            add_sizebar(ax, sizebar, r'\textbf{%g\,%s}'%(sizebar*unit_length_in_pc, sizebar_unit), color=text_color)
+            add_sizebar(ax, sizebar, r'\textbf{%.2g\,%s}'%(sizebar*unit_length_in_pc, sizebar_unit), color=text_color)
         if sizebar_unit == 'kpc':
-            add_sizebar(ax, sizebar, r'\textbf{%g\,%s}'%(sizebar*unit_length_in_pc*1000, sizebar_unit), color=text_color)
+            add_sizebar(ax, sizebar, r'\textbf{%.2g\,%s}'%(sizebar*unit_length_in_pc*1000, sizebar_unit), color=text_color)
+        if sizebar_unit == 'au':
+            add_sizebar(ax, sizebar, r'\textbf{%.2g\,%s}'%(sizebar*unit_length_in_pc/206265, sizebar_unit), color=text_color)
 
     if not show_axes:
         ax.set_xticklabels([])
