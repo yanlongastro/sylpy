@@ -11,6 +11,7 @@ def get_radial_profile(value, position, component=None, method='density', percen
     sort = np.argsort(radius)
     radius = radius[sort]
     value = value[sort]
+    position = position[sort]
     if cdf:
         return radius, np.cumsum(value)
     
