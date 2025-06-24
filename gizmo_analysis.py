@@ -373,6 +373,7 @@ class simulation:
         self.output_folder = folder+'/'+output
         self.last = get_num_snaps(self.output_folder, timed=timed)-1
         self.snapshot_file = self.output_folder+'/snapshot_%03d.hdf5'
+        self.png_folders = []
         
     def snapshot(self, i):
         return snapshot(self.snapshot_file%i)
@@ -533,3 +534,30 @@ class simulation:
                 temp = np.std(temp)
             history.append(temp)
         return np.array(age), np.array(history)
+    
+    def prepare_png_folder(self, png_folder='pngs'):
+        """
+        Prepare a folder for png files
+        """
+        if png_folder not in self.png_folders:
+            self.png_folders.append(png_folder)
+        png_folder = self.output_folder+"/%s/"%png_folder
+        png_file = png_folder+'/snapshot_%03d.png'
+        os.makedirs(png_folder, exist_ok=True)
+
+        try:
+            cleanup = os.path.getmtime(self.snapshot_file%0)>os.path.getmtime(png_file%0)
+        except:
+            cleanup = False
+        overwrite = cleanup
+
+        if cleanup:
+            existings = glob.glob(png_folder+'/*')
+            for f in existings:
+                os.remove(f)
+        return overwrite
+    
+    def make_movie(self, png_folder=''):
+        mp4_output = self.output_folder+"/%s/movie.mp4"%png_folder
+        png_file = png_folder+'/snapshot_%03d.png'
+        os.system("ffmpeg -y -framerate 20 -i %s -c:v libx264 -pix_fmt yuv420p -vf 'scale=trunc(iw/2)*2:trunc(ih/2)*2' %s"%(png_file, mp4_output))
