@@ -145,6 +145,8 @@ def get_job_status(folder='.', batch_name='submit.sh', system='slurm', username=
         return 0, ii[0] # pending
     if len(st)==0:
         return -1, None # stopped
+    if 'H' in st:
+        return -2, ii[0] # held
     
 def estimate_simulation_runtime(folder, diff=False, t1=None, output_dir='output', snapshot_template='snapshot_%03d.hdf5', human=False):
     sim_folder = folder+'/'+output_dir
@@ -234,6 +236,13 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
                 jid_ = res.stdout.decode('UTF-8').split()[-1]
                 print('> %s'%jid_)
             print('')
+        if st==-2:
+            print('Held ', end='')
+            if system == 'torque':
+                res = subprocess.run(["qdel", "%s"%jid], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if system == 'slurm':
+                res = subprocess.run(["scancel", "%s"%jid], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print('> cancelled')
         os.chdir(cwd)
     print("** We have %d jobs in progress."%n_active)
     return n_active
