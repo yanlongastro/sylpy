@@ -558,6 +558,7 @@ class simulation:
         return overwrite, png_file
     
     def make_movie(self, png_folder='pngs'):
-        mp4_output = self.output_folder+"/%s/movie.mp4"%png_folder
+        png_folder = self.output_folder+"/%s/"%png_folder
         png_file = png_folder+'/snapshot_%03d.png'
+        mp4_output = png_folder+'/movie.mp4'
         os.system("ffmpeg -y -framerate 20 -i %s -c:v libx264 -pix_fmt yuv420p -vf 'scale=trunc(iw/2)*2:trunc(ih/2)*2' %s"%(png_file, mp4_output))
