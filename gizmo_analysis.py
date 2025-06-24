@@ -555,7 +555,7 @@ class simulation:
             existings = glob.glob(png_folder+'/*')
             for f in existings:
                 os.remove(f)
-        return overwrite
+        return overwrite, png_file
     
     def make_movie(self, png_folder=''):
         mp4_output = self.output_folder+"/%s/movie.mp4"%png_folder
