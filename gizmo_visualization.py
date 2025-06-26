@@ -11,6 +11,8 @@ import h5py
 def read_snapshot(file):
     with h5py.File(file,"r") as F:
         pdata = {}
+        if "PartType0" not in F.keys():
+            return pdata
         for field in F["PartType0"].keys():
             pdata[field] = F["PartType0"][field][:]
     return pdata

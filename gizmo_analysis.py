@@ -12,6 +12,7 @@ from scipy import spatial
 import pandas as pd
 import glob
 import os
+import constants_units as cu
 
 
 unit_time_in_yr = 206265*1000*1.5e8/(86400*365)
@@ -368,12 +369,18 @@ class simulation:
     """
     A series of snapshots in a single simulation.
     """
-    def __init__(self, folder, output='output', timed=True):
+    def __init__(self, folder, output='output', params='params.txt', timed=True):
         self.sim_folder = folder
         self.output_folder = folder+'/'+output
+        self.timed = timed
         self.last = get_num_snaps(self.output_folder, timed=timed)-1
         self.snapshot_file = self.output_folder+'/snapshot_%03d.hdf5'
         self.png_folders = []
+        self.param_file = folder+'/'+params
+        self.units = cu.units(param_file=self.param_file)
+    
+    def refresh(self):
+        self.last = get_num_snaps(self.output_folder, timed=self.timed)-1
         
     def snapshot(self, i):
         return snapshot(self.snapshot_file%i)
@@ -524,11 +531,11 @@ class simulation:
             if 'log' in method:
                 temp = np.log10(temp)
             
-            if 'sum' in method:
+            if 'sum' == method:
                 temp = np.sum(temp)
-            if 'inverse_sum' in method:
+            if 'inverse_sum' == method:
                 temp = np.sum(1/temp)
-            if 'average' in method:
+            if 'average' in method or 'mean' in method:
                 temp = np.mean(temp)
             if 'stdev' in method:
                 temp = np.std(temp)
