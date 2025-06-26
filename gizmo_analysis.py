@@ -12,7 +12,7 @@ from scipy import spatial
 import pandas as pd
 import glob
 import os
-import constants_units as cu
+from . import constants_units as cu
 
 
 unit_time_in_yr = 206265*1000*1.5e8/(86400*365)
