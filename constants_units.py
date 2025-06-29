@@ -7,6 +7,7 @@ yr_cgs = 365.2422*24*3600
 c_cgs = 299792458*100
 kB_cgs = 1.380649e-16
 mp_cgs = 1.6726219e-24
+Msun_cgs = 1.989e+33
 
 class units:
     def __init__(self, UnitMass_in_g=1.989e+43, UnitLength_in_cm=3.08568e+21, UnitVelocity_in_cm_per_s=1e5, UnitMagneticField_in_gauss=1,
@@ -31,6 +32,7 @@ class units:
         self.UnitTime_in_yr = self.UnitTime_in_s/yr_cgs
         self.UnitTime_in_Myr = self.UnitTime_in_yr/1e6
         self.UnitTime_in_Gyr = self.UnitTime_in_yr/1e9
+        self.UnitMass_in_solar = self.UnitMass_in_g/Msun_cgs
     
     def derive_constants(self):
         self.G = G_cgs*self.UnitMass_in_g**(1) *self.UnitLength_in_cm**(-3) *self.UnitTime_in_s**(2)
