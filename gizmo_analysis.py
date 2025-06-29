@@ -216,9 +216,13 @@ class snapshot:
     def bh(self, attr):
         return self.f['PartType5'][attr][()]
     
-    def bh_sorted(self, attr):
+    def bh_sorted(self, attr, stellar_stage=None):
         ids = self.f['PartType5']['ParticleIDs'][()]
         target = self.f['PartType5'][attr][()]
+        if stellar_stage is not None:
+            stage_filter = self.f['PartType5']['ProtoStellarStage'][()]==stellar_stage
+            ids = ids[stage_filter]
+            target = target[stage_filter]
         a = target[ids.argsort()]
         return a
     
@@ -432,22 +436,22 @@ class simulation:
             dbh.append(sp.single_bh(bh, 'Masses') - sp0.single_bh(bh, 'Masses'))
         return bhs[np.argmax(dbh)]
     
-    def get_bh_history(self, bhid=None, attr='Masses', method='', difference=False,):
+    def get_bh_history(self, bhid=None, attr='Masses', method='', diff=None, stellar_stage=None):
         age = []
         history = []
-        if difference is True:
-            sp0 = snapshot(self.snapshot_file%0)
+        if diff is not None:
+            sp0 = snapshot(self.snapshot_file%diff)
         for i in range(self.last+1):
             sp = snapshot(self.snapshot_file%i)
             try:
                 if bhid is not None:
                     temp = sp.single_bh(bhid, attr, )
-                    if difference:
+                    if diff is not None:
                         temp -= sp0.single_bh(bhid, attr, )
                 else:
-                    temp = sp.bh_sorted(attr)
-                    if difference:
-                        temp -= sp0.bh_sorted(attr)
+                    temp = sp.bh_sorted(attr, stellar_stage=stellar_stage)
+                    if diff is not None:
+                        temp -= sp0.bh_sorted(attr, stellar_stage=stellar_stage)
             except:
                 continue
             
@@ -481,6 +485,24 @@ class simulation:
             age.append(sp.time)
             history.append(np.sum(sp.star(attr)))
         return np.array(age), np.array(history)
+    
+    def get_bh_evolution_track(self, stellar_stage=None):
+        res = {}
+        res['IDs'] = []
+        for sid in range(self.last+1):
+            sp = self.snapshot(sid)
+            if 'PartType5' in sp.f.keys():
+                for pid in sp.f['PartType5']['ParticleIDs'][()]:
+                    if stellar_stage is not None:
+                        if sp.f['PartType5']['ProtoStellarStage'][()][sp.f['PartType5']['ParticleIDs'][()]==pid][0] != stellar_stage:
+                            continue
+                    if pid not in res['IDs']:
+                        res[str(pid)] = [sid]
+                        res['IDs'].append(pid)
+                    else:
+                        res[str(pid)].append(sid)
+        self.bh_tracks = res
+        return res
     
     def get_bh_mass_ratio(self, i=0, j=None, attr='BH_Mass'):
         if j is None:

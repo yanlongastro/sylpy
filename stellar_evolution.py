@@ -161,3 +161,12 @@ def stellar_radius_tout96(m, z):
             cs[i] += r[j]*lgz**j
     return (cs[0]*m**2.5 + cs[1]*m**6.5 + cs[2]*m**11 +cs[3]*m**19 +cs[4]*m**19.5) \
             /(cs[5] +cs[6]*m**2 +cs[7]*m**8.5 +m**18.5 +cs[8]*m**19.5)
+
+
+def measure_mass_function(m, nbins=21, mmin=0.01, mmax=100):
+    logm = np.log(m)
+    bins = np.log(np.logspace(np.log10(mmin), np.log10(mmax), num=nbins))
+    val, bins = np.histogram(logm, bins=bins, density=True)
+    logmc = (bins[1:]+bins[:-1])/2
+    mc = np.exp(logmc)
+    return mc, val/mc
