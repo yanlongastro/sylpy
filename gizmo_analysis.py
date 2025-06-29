@@ -380,9 +380,9 @@ class simulation:
         self.timed = timed
         self.snapshot_file = self.output_folder+'/snapshot_%03d.hdf5'
         self.png_folders = []
-        self.param_file = folder+'/'+params_file
+        self.params_file = folder+'/'+params_file
         self.params = ms.read_params(self.params_file)
-        self.units = cu.units(param_file=self.param_file)
+        self.units = cu.units(param_file=self.params_file)
         self.refresh()
     
     def refresh(self):
