@@ -13,6 +13,7 @@ import pandas as pd
 import glob
 import os
 from . import constants_units as cu
+from . import manage_sims as ms
 
 
 unit_time_in_yr = 206265*1000*1.5e8/(86400*365)
@@ -373,13 +374,14 @@ class simulation:
     """
     A series of snapshots in a single simulation.
     """
-    def __init__(self, folder, output='output', params='params.txt', timed=True):
+    def __init__(self, folder, output='output', params_file='params.txt', timed=True):
         self.sim_folder = folder
         self.output_folder = folder+'/'+output
         self.timed = timed
         self.snapshot_file = self.output_folder+'/snapshot_%03d.hdf5'
         self.png_folders = []
-        self.param_file = folder+'/'+params
+        self.param_file = folder+'/'+params_file
+        self.params = ms.read_params(self.params_file)
         self.units = cu.units(param_file=self.param_file)
         self.refresh()
     
