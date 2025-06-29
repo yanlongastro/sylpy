@@ -499,7 +499,7 @@ class simulation:
         mr.sort()
         return (mr*1e10, 1-np.array(range(0, len(mr)))/len(mr))
     
-    def get_gas_history(self, attr='Masses', method='sum', crit_density=None, radius_cut=None, ids=None):
+    def get_gas_history(self, attr='Masses', method='sum', percentiles=[16, 50, 84], crit_density=None, radius_cut=None, ids=None):
         # radius_cut: only return gas out side the radius, in code unit
         age = []
         history = []
@@ -539,6 +539,8 @@ class simulation:
                 temp = np.mean(temp, axis=0)
             if 'stdev' in method:
                 temp = np.std(temp, axis=0)
+            if 'percentile' in method:
+                temp = np.percentile(temp, percentiles, axis=0)
             history.append(temp)
         return np.array(age), np.array(history)
     
