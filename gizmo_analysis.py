@@ -373,14 +373,15 @@ class simulation:
         self.sim_folder = folder
         self.output_folder = folder+'/'+output
         self.timed = timed
-        self.last = get_num_snaps(self.output_folder, timed=timed)-1
         self.snapshot_file = self.output_folder+'/snapshot_%03d.hdf5'
         self.png_folders = []
         self.param_file = folder+'/'+params
         self.units = cu.units(param_file=self.param_file)
+        self.refresh()
     
     def refresh(self):
         self.last = get_num_snaps(self.output_folder, timed=self.timed)-1
+        print(self.output_folder, self.last)
         
     def snapshot(self, i):
         return snapshot(self.snapshot_file%i)
