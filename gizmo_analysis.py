@@ -532,13 +532,13 @@ class simulation:
                 temp = np.log10(temp)
             
             if 'sum' == method:
-                temp = np.sum(temp)
+                temp = np.sum(temp, axis=0)
             if 'inverse_sum' == method:
-                temp = np.sum(1/temp)
+                temp = np.sum(1/temp, axis=0)
             if 'average' in method or 'mean' in method:
-                temp = np.mean(temp)
+                temp = np.mean(temp, axis=0)
             if 'stdev' in method:
-                temp = np.std(temp)
+                temp = np.std(temp, axis=0)
             history.append(temp)
         return np.array(age), np.array(history)
     
