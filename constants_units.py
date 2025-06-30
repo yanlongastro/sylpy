@@ -22,7 +22,6 @@ class units:
         else:
             self.UnitMass_in_g = UnitMass_in_g
             self.UnitLength_in_cm = UnitLength_in_cm
-            self.UnitLength_in_pc = UnitLength_in_cm/pc_cgs
             self.UnitVelocity_in_cm_per_s = UnitVelocity_in_cm_per_s
             self.UnitMagneticField_in_gauss = UnitMagneticField_in_gauss
         
@@ -35,6 +34,7 @@ class units:
         self.UnitTime_in_Myr = self.UnitTime_in_yr/1e6
         self.UnitTime_in_Gyr = self.UnitTime_in_yr/1e9
         self.UnitMass_in_solar = self.UnitMass_in_g/Msun_cgs
+        self.UnitLength_in_pc = self.UnitLength_in_cm/pc_cgs
     
     def derive_constants(self):
         self.G = G_cgs*self.UnitMass_in_g**(1) *self.UnitLength_in_cm**(-3) *self.UnitTime_in_s**(2)
