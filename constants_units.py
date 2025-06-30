@@ -5,6 +5,7 @@ import numpy as np
 G_cgs = 6.6743e-8
 yr_cgs = 365.2422*24*3600
 c_cgs = 299792458*100
+pc_cgs = 3.08568e18
 kB_cgs = 1.380649e-16
 mp_cgs = 1.6726219e-24
 Msun_cgs = 1.989e+33
@@ -21,6 +22,7 @@ class units:
         else:
             self.UnitMass_in_g = UnitMass_in_g
             self.UnitLength_in_cm = UnitLength_in_cm
+            self.UnitLength_in_pc = UnitLength_in_cm/pc_cgs
             self.UnitVelocity_in_cm_per_s = UnitVelocity_in_cm_per_s
             self.UnitMagneticField_in_gauss = UnitMagneticField_in_gauss
         

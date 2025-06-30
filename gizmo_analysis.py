@@ -438,7 +438,7 @@ class simulation:
             dbh.append(sp.single_bh(bh, 'Masses') - sp0.single_bh(bh, 'Masses'))
         return bhs[np.argmax(dbh)]
     
-    def get_bh_history(self, bhid=None, attr='Masses', method='', diff=None, stellar_stage=None):
+    def get_bh_history(self, bhid=None, attr='Masses', method='', percentiles=[16, 50, 84], diff=None, stellar_stage=None):
         age = []
         history = []
         if diff is not None:
@@ -463,17 +463,15 @@ class simulation:
                 temp = np.log10(temp)
             
             if 'sum' in method:
-                temp = np.sum(temp)
+                temp = np.sum(temp, axis=0)
             if 'inverse_sum' in method:
-                temp = np.sum(1/temp)
+                temp = np.sum(1/temp, axis=0)
             if 'average' in method:
-                temp = np.mean(temp)
+                temp = np.mean(temp, axis=0)
             if 'stdev' in method:
-                temp = np.std(temp)    
+                temp = np.std(temp, axis=0)    
             if 'percentile' in method:
-                # e.g., must be percentile_0.95
-                pct = float(method[11:])
-                temp = np.sort(temp)[int(len(temp)*pct)]
+                temp = np.percentile(temp, percentiles, axis=0)
             
             history.append(temp)
             age.append(sp.time)
@@ -490,7 +488,6 @@ class simulation:
     
     def get_bh_evolution_track(self, stellar_stage=None):
         res = {}
-        res['IDs'] = []
         for sid in range(self.last+1):
             sp = self.snapshot(sid)
             if 'PartType5' in sp.f.keys():
@@ -498,9 +495,8 @@ class simulation:
                     if stellar_stage is not None:
                         if sp.f['PartType5']['ProtoStellarStage'][()][sp.f['PartType5']['ParticleIDs'][()]==pid][0] != stellar_stage:
                             continue
-                    if pid not in res['IDs']:
+                    if str(pid) not in res:
                         res[str(pid)] = [sid]
-                        res['IDs'].append(pid)
                     else:
                         res[str(pid)].append(sid)
         self.bh_tracks = res
