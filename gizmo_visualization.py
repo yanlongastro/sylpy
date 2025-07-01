@@ -291,8 +291,8 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
             except:
                 print('No stars')
                 pass
-    ax.set_xlim(-rmax+center[axes[0]], rmax+center[axes[0]])
-    ax.set_ylim(-rmax+center[axes[1]], rmax+center[axes[1]])
+    ax.set_xlim(-rmax+center[0], rmax+center[0])
+    ax.set_ylim(-rmax+center[1], rmax+center[1])
     
     if len(bhids)>0:
         xx = sp.single_bh(bhids[0], 'Coordinates')
