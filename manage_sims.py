@@ -178,7 +178,7 @@ def estimate_simulation_runtime(folder, diff=False, t1=None, output_dir='output'
         return res
 
 
-def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slurm'):
+def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slurm', max_jobs=1000):
     """
     Display the status of the simulations and resubmit the stopped ones.
     :param sims: list of simulation directories
@@ -244,5 +244,10 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
                 res = subprocess.run(["scancel", "%s"%jid], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             print('> cancelled')
         os.chdir(cwd)
+
+        if n_active>=max_jobs:
+            print("** Quit early, since we have too many jobs in queue.")
+            break
+
     print("** We have %d jobs in progress."%n_active)
     return n_active
