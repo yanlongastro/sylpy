@@ -172,7 +172,10 @@ def calculate_circular_velocity(center, ms, xs, zlim=np.inf):
     return dr, vc
 
 class snapshot:
-    def __init__(self, file, showinfo=False):
+    def __init__(self, file, snapshot_id=None, showinfo=False):
+        self.file = file
+        self.output_folder = os.path.dirname(file)
+        self.snapshot_id = snapshot_id
         self.f =  h5py.File(file, 'r')
         try:
             self.gas_number = self.f['Header'].attrs['NumPart_ThisFile'][0]
@@ -278,6 +281,13 @@ class snapshot:
             #     res.append(np.array([]))
         return np.concatenate(res)
     
+    def run_phinder(self, phinder_exe='~/Phinder/Phinder.py', overwrite=True):
+        if self.snapshot_id is None:
+            bound_cluster_file = self.output_folder+'/bound_%03d.dat'
+            bf = bound_cluster_file%(self.snapshot_id)
+            if os.path.exists(bf) and not overwrite:
+                return
+        os.system("python %s %s"%(phinder_exe, self.file))
     
     
 def get_num_snaps(path, snap='snapshot_*.hdf5', timed=True):
@@ -390,7 +400,7 @@ class simulation:
         print(self.output_folder, self.last)
         
     def snapshot(self, i):
-        return snapshot(self.snapshot_file%i)
+        return snapshot(file=self.snapshot_file%i, snapshot_id==i)
         
     def find_interesting_BHs(self, num=5, first=0, last=None, sort_by_ratio=False):
         """
@@ -564,6 +574,12 @@ class simulation:
                 temp = np.percentile(temp, percentiles, axis=0)
             history.append(temp)
         return np.array(age), np.array(history)
+    
+    def run_phinder(self, phinder_exe='~/Phinder/Phinder.py', overwrite=True):
+        for i in range(self.last+1):
+            sp = snapshot(self.snapshot_file%i)
+            sp.run_phinder(phinder_exe=phinder_exe, overwrite=overwrite)
+            sp.close()
     
     def prepare_png_folder(self, png_folder='pngs'):
         """
