@@ -400,7 +400,7 @@ class simulation:
         print(self.output_folder, self.last)
         
     def snapshot(self, i):
-        return snapshot(file=self.snapshot_file%i, snapshot_id==i)
+        return snapshot(file=self.snapshot_file%i, snapshot_id=i)
         
     def find_interesting_BHs(self, num=5, first=0, last=None, sort_by_ratio=False):
         """
