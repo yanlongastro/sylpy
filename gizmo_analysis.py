@@ -281,13 +281,13 @@ class snapshot:
             #     res.append(np.array([]))
         return np.concatenate(res)
     
-    def run_phinder(self, phinder_exe='~/Phinder/Phinder.py', overwrite=True):
+    def run_phinder(self, phinder_exe='~/Phinder/Phinder.py', softening=1e-3, overwrite=True):
         if self.snapshot_id is None:
             bound_cluster_file = self.output_folder+'/bound_%03d.dat'
             bf = bound_cluster_file%(self.snapshot_id)
             if os.path.exists(bf) and not overwrite:
                 return
-        os.system("python %s %s"%(phinder_exe, self.file))
+        os.system("python %s --softening=%g %s"%(phinder_exe, softening, self.file))
     
     
 def get_num_snaps(path, snap='snapshot_*.hdf5', timed=True):
@@ -575,10 +575,10 @@ class simulation:
             history.append(temp)
         return np.array(age), np.array(history)
     
-    def run_phinder(self, phinder_exe='~/Phinder/Phinder.py', overwrite=True):
+    def run_phinder(self, phinder_exe='~/Phinder/Phinder.py', softening=1e-3, overwrite=True):
         for i in range(self.last+1):
             sp = snapshot(self.snapshot_file%i)
-            sp.run_phinder(phinder_exe=phinder_exe, overwrite=overwrite)
+            sp.run_phinder(phinder_exe=phinder_exe, softening=softening, overwrite=overwrite)
             sp.close()
     
     def prepare_png_folder(self, png_folder='pngs'):
