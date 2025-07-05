@@ -292,6 +292,16 @@ class snapshot:
         if bound_cluster_file is None:
             bound_cluster_file = self.bound_cluster_file
         self.bound_cluster_dat = np.loadtxt(bound_cluster_file, ndmin=2)
+        self.bound_clusters = {}
+        for i in range(len(self.bound_cluster_dat)):
+            cluster_id = "Cluster"+ ("%d"%i).zfill(int(np.log10(len(self.bound_cluster_dat))+1))
+            cluster_id = "Cluster_%03d"%(i)
+            self.bound_clusters[cluster_id] = {
+                "Mass": self.bound_cluster_dat[i, 0],
+                "Center": self.bound_cluster_dat[i, 1:4],
+                "HalfMassRadius": self.bound_cluster_dat[i, 4],
+                "NumParticles": self.bound_cluster_dat[i, 5],
+            }
     
     
 def get_num_snaps(path, snap='snapshot_*.hdf5', timed=True):
