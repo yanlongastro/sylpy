@@ -283,11 +283,17 @@ class snapshot:
     
     def run_phinder(self, phinder_exe='~/Phinder/Phinder.py', softening=1e-3, overwrite=True):
         if self.snapshot_id is None:
-            bound_cluster_file = self.output_folder+'/bound_%03d.dat'
-            bf = bound_cluster_file%(self.snapshot_id)
-            if os.path.exists(bf) and not overwrite:
+            bound_cluster_file = self.output_folder+'/bound_%03d.dat'%(self.snapshot_id)
+            if os.path.exists(bound_cluster_file) and not overwrite:
                 return
         os.system("python %s --softening=%g %s"%(phinder_exe, softening, self.file))
+        self.bound_cluster_file = bound_cluster_file
+        self.read_phinder_dat()
+
+    def read_phinder_dat(self, bound_cluster_file=None):
+        if bound_cluster_file is None:
+            bound_cluster_file = self.bound_cluster_file
+        self.bound_cluster_dat = np.loadtxt(bound_cluster_file, ndmin=2)
     
     
 def get_num_snaps(path, snap='snapshot_*.hdf5', timed=True):
@@ -575,7 +581,9 @@ class simulation:
             history.append(temp)
         return np.array(age), np.array(history)
     
-    def run_phinder(self, phinder_exe='~/Phinder/Phinder.py', softening=1e-3, overwrite=True):
+    def run_phinder(self, phinder_exe='~/Phinder/Phinder.py', softening=None, overwrite=True):
+        if softening is None:
+            softening = self.params["Softening_Type4"]
         for i in range(self.last+1):
             sp = snapshot(self.snapshot_file%i)
             sp.run_phinder(phinder_exe=phinder_exe, softening=softening, overwrite=overwrite)
