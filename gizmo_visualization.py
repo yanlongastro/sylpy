@@ -214,7 +214,7 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
         ax.set_aspect('equal')
     
     sp = ga.snapshot(filename)
-    unit_length_in_pc = sp.f['Header'].attrs['UnitLength_In_CGS']/3.08568e+18
+    unit_length_in_pc = sp.open('Header', 'UnitLength_In_CGS')/3.08568e+18
     pdata = read_snapshot(filename)
     if axes is not None: ## reoder to show the axes in order.
         axes = list(axes)
