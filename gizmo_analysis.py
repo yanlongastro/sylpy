@@ -176,31 +176,35 @@ class snapshot:
         self.file = file
         self.output_folder = os.path.dirname(file)
         self.snapshot_id = snapshot_id
-        self.f =  h5py.File(file, 'r')
-        try:
-            self.gas_number = self.f['Header'].attrs['NumPart_ThisFile'][0]
-            self.star_number = self.f['Header'].attrs['NumPart_ThisFile'][4]
-            self.bh_number = self.f['Header'].attrs['NumPart_ThisFile'][5]
-            self.time = self.f['Header'].attrs['Time']
-            self.UnitLength_In_CGS = self.f['Header'].attrs['UnitLength_In_CGS']
-            self.UnitTime_In_CGS = self.f['Header'].attrs['UnitLength_In_CGS']/self.f['Header'].attrs['UnitVelocity_In_CGS']
-            self.UnitTime_In_Yr = self.UnitTime_In_CGS/(86400*365)
-            self.UnitMass_In_CGS = self.f['Header'].attrs['UnitMass_In_CGS']
-            self.UnitDensity_In_CGS = self.f['Header'].attrs['UnitMass_In_CGS']/self.f['Header'].attrs['UnitLength_In_CGS']**3
-            self.UnitVelocity_In_CGS = self.f['Header'].attrs['UnitVelocity_In_CGS']
-            self.time_in_yr = self.time*self.UnitTime_In_CGS/(86400*365)
-            self.bh_sink_radius = self.f['Header'].attrs['Fixed_ForceSoftening_Keplerian_Kernel_Extent'][5]/2.8
-        except:
-            pass
-        
-        if showinfo == True:
-            show_info(self.f)
+        with h5py.File(file, 'r') as f:
+            try:
+                self.gas_number = f['Header'].attrs['NumPart_ThisFile'][0]
+                self.star_number = f['Header'].attrs['NumPart_ThisFile'][4]
+                self.bh_number = f['Header'].attrs['NumPart_ThisFile'][5]
+                self.time = f['Header'].attrs['Time']
+                self.UnitLength_In_CGS = f['Header'].attrs['UnitLength_In_CGS']
+                self.UnitTime_In_CGS = f['Header'].attrs['UnitLength_In_CGS']/f['Header'].attrs['UnitVelocity_In_CGS']
+                self.UnitTime_In_Yr = self.UnitTime_In_CGS/(86400*365)
+                self.UnitMass_In_CGS = f['Header'].attrs['UnitMass_In_CGS']
+                self.UnitDensity_In_CGS = f['Header'].attrs['UnitMass_In_CGS']/f['Header'].attrs['UnitLength_In_CGS']**3
+                self.UnitVelocity_In_CGS = f['Header'].attrs['UnitVelocity_In_CGS']
+                self.time_in_yr = self.time*self.UnitTime_In_CGS/(86400*365)
+                self.bh_sink_radius = f['Header'].attrs['Fixed_ForceSoftening_Keplerian_Kernel_Extent'][5]/2.8
+            except:
+                pass
+            
+            if showinfo == True:
+                show_info(f)
     
-    def close(self):
-        self.f.close()
+    def open(self, path, attr=None):
+        with h5py.File(self.file, 'r') as f:
+            if attr is not None:
+                return f[path].attrs[attr]
+            else:
+                return f[path][()]
         
     def gas(self, attr, partial=None, near_bhid=None):
-        res = self.f['PartType0'][attr][()]
+        res = self.open('PartType0/'+attr)
         if near_bhid is not None:
             partial = self.find_gas_near_bh(near_bhid)
         if partial is None:
@@ -209,40 +213,40 @@ class snapshot:
             return res[partial]
     
     def star(self, attr, partial=[], part_type='PartType4'):
-        if part_type in list(self.f.keys()):
+        try:
             if partial == []:
-                return self.f[part_type][attr][()]
+                return self.open(part_type+'/'+attr)
             else:
-                return self.f[part_type][attr][()][partial]
-        else:
+                return self.open(part_type+'/'+attr)[partial]
+        except:
             return np.array([])
         
     def bh(self, attr):
-        return self.f['PartType5'][attr][()]
+        return self.open('PartType5/'+attr)
     
     def bh_sorted(self, attr, stellar_stage=None):
-        ids = self.f['PartType5']['ParticleIDs'][()]
-        target = self.f['PartType5'][attr][()]
+        ids = self.open('PartType5/ParticleIDs')
+        target = self.open('PartType5/'+attr)
         if stellar_stage is not None:
-            stage_filter = self.f['PartType5']['ProtoStellarStage'][()]==stellar_stage
+            stage_filter = self.open('PartType5/ProtoStellarStage')==stellar_stage
             ids = ids[stage_filter]
             target = target[stage_filter]
         a = target[ids.argsort()]
         return a
     
     def single_bh(self, bhid, attr, ):
-        bhpid = np.where(self.f['PartType5']['ParticleIDs'][()]==bhid)
+        bhpid = np.where(self.open('PartType5/ParticleIDs')==bhid)
         if len(bhpid)>1:
             print("More than one particles have the same ID, should be an issue!")
         bhpid = bhpid[0][0]
-        return self.f['PartType5'][attr][()][bhpid]
+        return self.open('PartType5/'+attr)[bhpid]
 
     def single_particle(self, pid, part_type, attr):
-        bhpid = np.where(self.f[part_type]['ParticleIDs'][()]==pid)
+        bhpid = np.where(self.open(part_type+'/ParticleIDs')==pid)
         if len(bhpid)>1:
             print("More than one particles have the same ID, should be an issue!")
         bhpid = bhpid[0][0]
-        return self.f[part_type][attr][()][bhpid]
+        return self.open(part_type+'/'+attr)[bhpid]
             
     def find_gas_near_bh(self, bhid=1, kneighbor=96, drmax=10086, p_norm=2, center=None):
         if center is None:
@@ -275,8 +279,10 @@ class snapshot:
         res = []
         for type in types:
             part_type = "PartType"+str(type)
-            if part_type in list(self.f.keys()):
-                res.append(self.f[part_type][attr][()])
+            try:
+                res.append(self.open(part_type+'/'+attr))
+            except:
+                pass
             # else:
             #     res.append(np.array([]))
         return np.concatenate(res)

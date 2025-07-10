@@ -8,11 +8,16 @@ c_cgs = 299792458*100
 pc_cgs = 3.08568e18
 kB_cgs = 1.380649e-16
 mp_cgs = 1.6726219e-24
-Msun_cgs = 1.989e+33
+Msun_cgs = 1.989e33
+Rsun_cgs = 6.957e10
 
 class units:
     def __init__(self, UnitMass_in_g=1.989e+43, UnitLength_in_cm=3.08568e+21, UnitVelocity_in_cm_per_s=1e5, UnitMagneticField_in_gauss=1,
                  param_file=None, snapshot_file=None):
+        """
+        param_file : if a gizmo run's parameter file is given, we derive units from it
+        snapshot_file : derive the units from the snapshot's header
+        """
         if param_file is not None:
             params = ms.read_params(param_file)
             for k in ['UnitMass_in_g', 'UnitLength_in_cm', 'UnitVelocity_in_cm_per_s', 'UnitMagneticField_in_gauss']:
@@ -53,4 +58,5 @@ class units:
 cgs = units(1, 1, 1, 1)
 SI = units(1000, 100, 100, 1e4)
 FIRE = units()
-STARFORGE = units(1.989e+33, 3.08568e+18, 1e2, 1e4)
+STARFORGE = units(Msun_cgs, pc_cgs, 1e2, 1e4)
+star = units(Msun_cgs, Rsun_cgs, 100, 1)
