@@ -202,6 +202,12 @@ class snapshot:
                 return f[path].attrs[attr]
             else:
                 return f[path][()]
+    def keys(self, path=None):
+        with h5py.File(self.file, 'r') as f:
+            if path is None:
+                return list(f.keys())
+            else:
+                return list(f[path].keys())
         
     def gas(self, attr, partial=None, near_bhid=None):
         res = self.open('PartType0/'+attr)
