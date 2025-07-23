@@ -17,7 +17,7 @@ class cluster:
         return spherical_density_profile(self.mass, self.position, dN=dN, dr=dr, dlogr=dlogr, cdf=cdf, projection=projection)
 
 
-def spherical_density_profile(mass, position, dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
+def spherical_density_profile(position, mass=None, dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
     """
     For a given mass dist, return the mass profile
 
@@ -36,6 +36,8 @@ def spherical_density_profile(mass, position, dN=100, dr=None, dlogr=0.05, cdf=F
     projection : string, '2d' or '3d'
         Projection that determines if this is a 3d or 2d distribution function
     """
+    if mass is None:
+        mass = np.ones(len(position))
     i = 0
     if position.ndim>1:
         if projection=='3d':

@@ -41,22 +41,27 @@ class units:
         self.UnitMass_in_solar = self.UnitMass_in_g/Msun_cgs
         self.UnitLength_in_pc = self.UnitLength_in_cm/pc_cgs
         self.UnitVelocity_in_m_per_s = self.UnitVelocity_in_cm_per_s/100
+        self.UnitDensity_in_cgs = self.UnitMass_in_g/self.UnitLength_in_cm**3
+        self.UnitPressure_in_cgs = self.UnitDensity_in_cgs*self.UnitVelocity_in_cm_per_s**2
     
     def derive_constants(self):
         self.G = G_cgs*self.UnitMass_in_g**(1) *self.UnitLength_in_cm**(-3) *self.UnitTime_in_s**(2)
         self.c = c_cgs/self.UnitVelocity_in_cm_per_s
 
-    def free_fall_time(self, M, R, output_unit=None):
-        tff =  np.pi/2 *np.sqrt(R**3/self.G/M/2)
+    def dynamical_time(self, M, R, output_unit=None):
+        tdyn =  np.sqrt(R**3/self.G/M)
         if output_unit is not None:
-            tff *= getattr(self, 'UnitTime_in_'+output_unit)
-        return tff
+            tdyn *= getattr(self, 'UnitTime_in_'+output_unit)
+        return tdyn
+
+    def free_fall_time(self, M, R, output_unit=None):
+        tff =  np.pi*np.sqrt(1/8)*self.dynamical_time(M, R, output_unit)
     
     def circular_period(self, M, R, output_unit=None):
-        return np.sqrt(8)*2*self.free_fall_time(M, R, output_unit)
+        return 2*np.pi*self.dynamical_time(M, R, output_unit)
 
 cgs = units(1, 1, 1, 1)
 SI = units(1000, 100, 100, 1e4)
 FIRE = units()
 STARFORGE = units(Msun_cgs, pc_cgs, 1e2, 1e4)
-star = units(Msun_cgs, Rsun_cgs, 100, 1)
+star = units(Msun_cgs, Rsun_cgs, 1e5, 1)

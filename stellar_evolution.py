@@ -140,6 +140,100 @@ def kroupa_imf_normalized(m, m_min=0.01, m_max=300, slopes=[-0.3, -1.3, -2.3, -2
     return res
 
 
+def kroupa_imf_weighted_luminosity(m_cut, m_min=0.01, m_max=300, slopes=[-0.3, -1.3, -2.3, -2.3], debug=False):
+    m0 = 0.08
+    m1 = 0.5
+    m2 = 1
+    
+    s0 = slopes[0]
+    s1 = slopes[1]
+    s2 = slopes[2]
+    s3 = slopes[3]
+    
+    c0 = 1.
+    c1 = c0 *m0**(s0-s1)
+    c2 = c1 *m1**(s1-s2)
+    c3 = c2 *m2**(s2-s3)
+    
+    norm = integral_power_law(m_min, m0, c0, s0)
+    norm += integral_power_law(m0, m1, c1, s1)
+    norm += integral_power_law(m1, m2, c2, s2)
+    norm += integral_power_law(m2, m_max, c3, s3)
+    
+    c0 /= norm
+    c1 /= norm
+    c2 /= norm
+    c3 /= norm
+    
+    mx0 = 0.012
+    mx1 = 0.43
+    mx2 = 2
+    mx3 = 53.9
+    
+    cx0 = 0
+    cx1 = 0.185
+    cx2 = 1
+    cx3 = 1.5
+    cx4 = 32000
+    
+    sx0 = 0
+    sx1 = 2
+    sx2 = 4
+    sx3 = 3.5
+    sx4 = 1
+    
+    m_list = [m_min,     m0,     mx0,      mx1,      m1,      m2,      mx2,     mx3,     m_max]
+    c_list =      [c0*cx0,  c1*cx0,  c1*cx1,  c1*cx2,   c2*cx2,  c3*cx2,  c3*cx3,  c3*cx4]
+    s_list =      [s0+sx0,  s1+sx0,  s1+sx1,  s1+sx2,   s2+sx2,  s3+sx2,  s3+sx3,  s3+sx4]
+    
+    for i in range(8):
+        if(m_list[i+1]>=m_cut):
+            m_list[i+1] = m_cut
+            #print(i)
+            break
+    for j in range(i+1, 8):
+        c_list[j] = 0.
+
+    res = 0.
+    
+    for i in range(8):
+        if debug:
+            print(i, m_list[i], m_list[i+1], c_list[i], s_list[i])
+        res += integral_power_law(m_list[i], m_list[i+1], c_list[i], s_list[i])
+    return res
+
+def kroupa_light_to_mass_ratio(m_cut, m_min=0.001, m_max=300, slopes=[-0.3, -1.3, -2.3, -2.3]):
+    return kroupa_imf_weighted_luminosity(m_cut, m_min, m_max, slopes)/kroupa_imf_normalized(m_cut, m_min, m_max, slopes, cdf=True, mass_weighted=True)
+
+def fire_light_mass_ratio(stellar_age_in_gyr, z_in_solar=1):
+    # fire-3: 2203.00040, but this is fire-2
+    t1=0.0012
+    t2=0.0037
+    f1=800.
+    f2=1100.*pow(z_in_solar, -0.1)
+    tx=np.log10(stellar_age_in_gyr/t2)
+    t_g=np.log10(stellar_age_in_gyr/1.2)/0.05
+    if(stellar_age_in_gyr<=t1):
+        lum=f1
+    elif (stellar_age_in_gyr<=t2):
+        lum=f1*pow(stellar_age_in_gyr/t1,np.log(f2/f1)/np.log(t2/t1))
+    else:
+        lum=f2*pow(10.,-1.82*tx+0.42*tx*tx-0.07*tx*tx*tx)*(1.+1.2*np.exp(-0.5*t_g*t_g))
+    return lum
+
+def stellar_luminosity_fire(m):
+    res = (m<=0.012)*0.
+    res += (m>0.012)*(m<=0.43) *0.185*m**2
+    res += (m>0.43)*(m<=2) *m**4
+    res += (m>2)*(m<=53.9) *1.5*m**3.5
+    res += (m>53.9) *32000*m
+    return res
+
+def single_star_light_to_mass_ratio(m):
+    return stellar_luminosity_fire(m)/m
+    
+
+
 tout_lum_mat = np.loadtxt(package_dir+"/data/tout_fitting_lum")
 tout_rad_mat = np.loadtxt(package_dir+"/data/tout_fitting_rad")
 
