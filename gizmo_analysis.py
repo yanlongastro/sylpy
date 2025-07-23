@@ -296,6 +296,7 @@ class snapshot:
     def run_phinder(self, phinder_exe='~/Phinder/Phinder.py', softening=1e-3, overwrite=True):
         self.bound_cluster_file = self.output_folder+'/bound_%03d.dat'%(self.snapshot_id)
         if os.path.exists(self.bound_cluster_file) and not overwrite:
+            self.read_phinder_dat()
             return
         os.system("python %s --softening=%g %s"%(phinder_exe, softening, self.file))
         self.read_phinder_dat()
