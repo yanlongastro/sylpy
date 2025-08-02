@@ -7,6 +7,8 @@ import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib as mpl
 import h5py
+import yt
+import os
 
 def read_snapshot(file):
     with h5py.File(file,"r") as F:
@@ -339,3 +341,50 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
     if empty_map:
         return None, None, None, None
     return X, Y, sdmap, im
+
+
+
+def volume_rendering(sim, sid, rmax=4, res=128, overwrite=False):
+    # check if we need to do this
+    os.makedirs(sim.output_folder+"/volume_rendering/", exist_ok=True)
+    filename = sim.output_folder + "/volume_rendering/snapshot_%03d.png"%sid
+    if os.path.exists(filename) and not overwrite:
+        print("File already exists, skipping: ", filename)
+        return
+
+    # load snapshot
+    sp = sim.snapshot(sid)
+    pos = sp.gas("Coordinates")
+    mass = sp.gas("Masses")
+    rho = sp.gas("Density")
+    z = sp.gas("Metallicity")
+    pos -= np.mean(pos, axis=0)
+    M = Meshoid(pos, mass)
+    M.boxsize = -1
+
+    # deposit to grid
+    size = rmax*2
+    arr = M.DepositToGrid(mass, size=size, center=np.array([0,0,0]), res=res, )
+
+    # yt load
+    x = np.linspace(-size / 2, size / 2, res + 1)
+    x = (x[1:] + x[:-1]) / 2
+    X, Y, Z = np.meshgrid(x, x, x, )#indexing="ij")
+    data = {"density": (arr, "g/cm**3"),
+            # 'particle_position_x': (X, 'Mpc'),
+            # 'particle_position_y': (Y, 'Mpc'),
+            # 'particle_position_z': (Z, 'Mpc')
+            }
+    bbox = np.array([[-1, 1], [-1, 1], [-1, 1]])*rmax
+    ds = yt.load_uniform_grid(data, arr.shape, length_unit="Mpc", bbox=bbox, nprocs=64)
+
+    # volume rendering
+    sc = yt.create_scene(ds, lens_type="plane-parallel")
+    sc.camera.width = (6, "Mpc")
+    sc.camera.roll(np.pi/2)
+    source = sc[0]
+    source.tfh.set_bounds((1e-3, 1e3))
+    source.tfh.set_log(True)
+    source.tfh.grey_opacity = True
+    sc.save(filename, sigma_clip=6.0)
+    

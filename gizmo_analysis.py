@@ -174,7 +174,7 @@ def calculate_circular_velocity(center, ms, xs, zlim=np.inf):
 class snapshot:
     def __init__(self, filename, snapshot_id=None, num_files_per_snapshot=1, snapshot_sub_id=None, showinfo=False):
         self.files = []
-        if '$d' in filename:
+        if '%d' in filename:
             if num_files_per_snapshot > 1:
                 if snapshot_sub_id is not None:
                     self.files.append(filename % (snapshot_id, snapshot_id, snapshot_sub_id))
