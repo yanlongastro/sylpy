@@ -13,7 +13,7 @@ Rsun_cgs = 6.957e10
 
 class units:
     def __init__(self, UnitMass_in_g=1.989e+43, UnitLength_in_cm=3.08568e+21, UnitVelocity_in_cm_per_s=1e5, UnitMagneticField_in_gauss=1,
-                 param_file=None, snapshot_file=None):
+                 param_file=None, snapshot_file=None, h=1 ):
         """
         param_file : if a gizmo run's parameter file is given, we derive units from it
         snapshot_file : derive the units from the snapshot's header
@@ -22,10 +22,12 @@ class units:
             params = ms.read_params(param_file)
             for k in ['UnitMass_in_g', 'UnitLength_in_cm', 'UnitVelocity_in_cm_per_s', 'UnitMagneticField_in_gauss']:
                 setattr(self, k, params[k])
+            if params['ComovingIntegrationOn']:
+                self.UnitMass_in_g /= params['HubbleParam']
         elif snapshot_file is not None:
             2333
         else:
-            self.UnitMass_in_g = UnitMass_in_g
+            self.UnitMass_in_g = UnitMass_in_g/h
             self.UnitLength_in_cm = UnitLength_in_cm
             self.UnitVelocity_in_cm_per_s = UnitVelocity_in_cm_per_s
             self.UnitMagneticField_in_gauss = UnitMagneticField_in_gauss
@@ -62,6 +64,7 @@ class units:
 
 cgs = units(1, 1, 1, 1)
 SI = units(1000, 100, 100, 1e4)
-FIRE = units()
+FIRE = units(h=0.68)
+FIRE_noncosmological = units()
 STARFORGE = units(Msun_cgs, pc_cgs, 1e2, 1e4)
 star = units(Msun_cgs, Rsun_cgs, 1e5, 1)

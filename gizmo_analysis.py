@@ -172,11 +172,23 @@ def calculate_circular_velocity(center, ms, xs, zlim=np.inf):
     return dr, vc
 
 class snapshot:
-    def __init__(self, file, snapshot_id=None, showinfo=False):
-        self.file = file
-        self.output_folder = os.path.dirname(file)
+    def __init__(self, filename, snapshot_id=None, num_files_per_snapshot=1, snapshot_sub_id=None, showinfo=False):
+        self.files = []
+        if '$d' in filename:
+            if num_files_per_snapshot > 1:
+                if snapshot_sub_id is not None:
+                    self.files.append(filename % (snapshot_id, snapshot_id, snapshot_sub_id))
+                else:
+                    for i in range(num_files_per_snapshot):
+                        self.files.append(filename % (snapshot_id, snapshot_id, i))
+            else:
+                self.files.append(filename % snapshot_id)
+        else:
+            self.files.append(filename)
+        self.output_folder = os.path.dirname(self.files[0])
+        self.file = self.files[0]
         self.snapshot_id = snapshot_id
-        with h5py.File(file, 'r') as f:
+        with h5py.File(self.file, 'r') as f:
             try:
                 self.gas_number = f['Header'].attrs['NumPart_ThisFile'][0]
                 self.star_number = f['Header'].attrs['NumPart_ThisFile'][4]
@@ -195,6 +207,27 @@ class snapshot:
             
             if showinfo == True:
                 show_info(f)
+
+    def to_dict(self):
+        """
+        Convert all snapshot attributes to a dictionary.
+        """
+        data = {}
+        for file in self.files:
+            with h5py.File(file, 'r') as f:
+                for key in f.keys():
+                    if key not in data:
+                        data[key] = {}
+                    if key == 'Header': # for headers, we keep the attributes
+                        for attr in f[key].attrs.keys():
+                            data[key][attr] = f[key].attrs[attr]
+                    else:   # for particle data, we keep the data
+                        for subkey in f[key].keys():
+                            if subkey not in data[key]:
+                                data[key][subkey] = f[key][subkey][()]
+                            else:
+                                data[key][subkey] = np.concatenate([data[key][subkey], f[key][subkey][()]])
+        return data
     
     def open(self, path, attr=None):
         with h5py.File(self.file, 'r') as f:
@@ -317,8 +350,14 @@ class snapshot:
             }
     
     
-def get_num_snaps(path, snap='snapshot_*.hdf5', timed=True):
-    fns = glob.glob1(path, snap)
+def get_num_snaps(path, n_files_per_snap=1, timed=True):
+    if n_files_per_snap == 1:
+        snapshot_ = 'snapshot_*.hdf5'
+        snapshot = 'snapshot_%03d.hdf5'
+    else:
+        snapshot_ = 'snapdir_*'
+        snapshot = 'snapdir_%03d'
+    fns = glob.glob1(path, snapshot_)
     if len(fns)<=1:
         return len(fns)
     imax = 0
@@ -326,7 +365,7 @@ def get_num_snaps(path, snap='snapshot_*.hdf5', timed=True):
     if not timed:
         return len(fns)
     for i in range(1, len(fns)):
-        file = os.path.join(path, 'snapshot_%03d.hdf5'%i)
+        file = os.path.join(path, snapshot%i)
         if not os.path.exists(file):
             break
         t = os.path.getmtime(file)
@@ -415,11 +454,18 @@ class simulation:
         self.sim_folder = folder
         self.output_folder = folder+'/'+output
         self.timed = timed
-        self.snapshot_file = self.output_folder+'/snapshot_%03d.hdf5'
         self.png_folders = []
         self.params_file = folder+'/'+params_file
         self.params = ms.read_params(self.params_file)
         self.units = cu.units(param_file=self.params_file)
+        self.n_files_per_snap = self.params["NumFilesPerSnapshot"]
+
+        if self.n_files_per_snap>1:
+            self.snapshot_dir = self.output_folder+'/snapdir_%03d'
+            self.snapshot_file = self.snapshot_dir+'/snapshot_%03d.%d.hdf5'
+        else:
+            self.snapshot_file = self.output_folder+'/snapshot_%03d.hdf5'
+
         self.refresh()
     
     def refresh(self):
@@ -427,7 +473,7 @@ class simulation:
         print(self.output_folder, self.last)
         
     def snapshot(self, i):
-        return snapshot(file=self.snapshot_file%i, snapshot_id=i)
+        return snapshot(file=self.snapshot_file, snapshot_id=i)
         
     def find_interesting_BHs(self, num=5, first=0, last=None, sort_by_ratio=False):
         """
