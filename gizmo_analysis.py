@@ -188,6 +188,7 @@ class snapshot:
         self.output_folder = os.path.dirname(self.files[0])
         self.file = self.files[0]
         self.snapshot_id = snapshot_id
+        self.units = cu.units(snapshot_file=self.file)
         with h5py.File(self.file, 'r') as f:
             try:
                 self.gas_number = f['Header'].attrs['NumPart_ThisFile'][0]
