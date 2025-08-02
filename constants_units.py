@@ -25,7 +25,18 @@ class units:
             if params['ComovingIntegrationOn']:
                 self.UnitMass_in_g /= params['HubbleParam']
         elif snapshot_file is not None:
-            2333
+            import h5py
+            with h5py.File(snapshot_file, 'r') as f:
+                header = f['Header'].attrs
+                self.UnitMass_in_g = header['UnitMass_In_CGS']
+                self.UnitLength_in_cm = header['UnitLength_In_CGS']
+                self.UnitVelocity_in_cm_per_s = header['UnitVelocity_In_CGS']
+                try:
+                    self.UnitMagneticField_in_gauss = header['UnitMagneticField_in_gauss']
+                except:
+                    pass
+                if header['ComovingIntegrationOn']:
+                    self.UnitMass_in_g /= header['HubbleParam']
         else:
             self.UnitMass_in_g = UnitMass_in_g/h
             self.UnitLength_in_cm = UnitLength_in_cm
