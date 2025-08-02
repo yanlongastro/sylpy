@@ -22,8 +22,9 @@ class units:
             params = ms.read_params(param_file)
             for k in ['UnitMass_in_g', 'UnitLength_in_cm', 'UnitVelocity_in_cm_per_s', 'UnitMagneticField_in_gauss']:
                 setattr(self, k, params[k])
+            self.h = params['HubbleParam']
             if params['ComovingIntegrationOn']:
-                self.UnitMass_in_g /= params['HubbleParam']
+                self.UnitMass_in_g /= h
         elif snapshot_file is not None:
             import h5py
             with h5py.File(snapshot_file, 'r') as f:
@@ -35,13 +36,15 @@ class units:
                     self.UnitMagneticField_in_gauss = header['UnitMagneticField_in_gauss']
                 except:
                     pass
+                self.h = header['HubbleParam']
                 if header['ComovingIntegrationOn']:
-                    self.UnitMass_in_g /= header['HubbleParam']
+                    self.UnitMass_in_g /= h
         else:
             self.UnitMass_in_g = UnitMass_in_g/h
             self.UnitLength_in_cm = UnitLength_in_cm
             self.UnitVelocity_in_cm_per_s = UnitVelocity_in_cm_per_s
             self.UnitMagneticField_in_gauss = UnitMagneticField_in_gauss
+            self.h = h
         
         self.derive_units()
         self.derive_constants()
@@ -51,7 +54,7 @@ class units:
         self.UnitTime_in_yr = self.UnitTime_in_s/yr_cgs
         self.UnitTime_in_Myr = self.UnitTime_in_yr/1e6
         self.UnitTime_in_Gyr = self.UnitTime_in_yr/1e9
-        self.UnitMass_in_solar = self.UnitMass_in_g/Msun_cgs
+        self.UnitMass_in_solar = self.UnitMass_in_g*self.h/Msun_cgs
         self.UnitLength_in_pc = self.UnitLength_in_cm/pc_cgs
         self.UnitVelocity_in_m_per_s = self.UnitVelocity_in_cm_per_s/100
         self.UnitDensity_in_cgs = self.UnitMass_in_g/self.UnitLength_in_cm**3
