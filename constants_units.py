@@ -54,7 +54,7 @@ class units:
         self.UnitTime_in_yr = self.UnitTime_in_s/yr_cgs
         self.UnitTime_in_Myr = self.UnitTime_in_yr/1e6
         self.UnitTime_in_Gyr = self.UnitTime_in_yr/1e9
-        self.UnitMass_in_solar = self.UnitMass_in_g*self.h/Msun_cgs
+        self.UnitMass_in_solar = self.UnitMass_in_g/Msun_cgs
         self.UnitLength_in_pc = self.UnitLength_in_cm/pc_cgs
         self.UnitVelocity_in_m_per_s = self.UnitVelocity_in_cm_per_s/100
         self.UnitDensity_in_cgs = self.UnitMass_in_g/self.UnitLength_in_cm**3
