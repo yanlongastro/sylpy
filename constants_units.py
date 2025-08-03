@@ -22,7 +22,10 @@ class units:
             params = ms.read_params(param_file)
             for k in ['UnitMass_in_g', 'UnitLength_in_cm', 'UnitVelocity_in_cm_per_s', 'UnitMagneticField_in_gauss']:
                 setattr(self, k, params[k])
-            self.h = params['HubbleParam']
+            try:
+                self.h = params['HubbleParam']
+            except:
+                self.h = 1
             if params['ComovingIntegrationOn']:
                 self.UnitMass_in_g /= h
         elif snapshot_file is not None:
