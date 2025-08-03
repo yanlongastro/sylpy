@@ -29,6 +29,7 @@ class units:
             import h5py
             with h5py.File(snapshot_file, 'r') as f:
                 header = f['Header'].attrs
+                header = dict(header)
                 self.UnitMass_in_g = header['UnitMass_In_CGS']
                 self.UnitLength_in_cm = header['UnitLength_In_CGS']
                 self.UnitVelocity_in_cm_per_s = header['UnitVelocity_In_CGS']
