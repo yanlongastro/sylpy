@@ -173,8 +173,15 @@ def calculate_circular_velocity(center, ms, xs, zlim=np.inf):
 
 class snapshot:
     def __init__(self, filename, snapshot_id=None, num_files_per_snapshot=1, snapshot_sub_id=None, showinfo=False):
+        """
+        filename: the template of the snapshot file, e.g., 'snapshot_%03d.hdf5' or 'snapdir_%03d/snapshot_%03d.%d.hdf5'
+        snapshot_id: the snapshot id, can be None
+        num_files_per_snapshot: the number of files per snapshot, default is 1
+        snapshot_sub_id: the sub id of the snapshot, used when num_files_per_snapshot > 1
+        showinfo: whether to show the information of the snapshot file
+        """
         self.files = []
-        if '%d' in filename:
+        if '%' in filename:
             if num_files_per_snapshot > 1:
                 if snapshot_sub_id is not None:
                     self.files.append(filename % (snapshot_id, snapshot_id, snapshot_sub_id))
@@ -211,7 +218,7 @@ class snapshot:
 
     def to_dict(self):
         """
-        Convert all snapshot attributes to a dictionary.
+        Convert all snapshot attributes to a dictionary. Useful for multi-file snapshots.
         """
         data = {}
         for file in self.files:
@@ -459,7 +466,10 @@ class simulation:
         self.params_file = folder+'/'+params_file
         self.params = ms.read_params(self.params_file)
         self.units = cu.units(param_file=self.params_file)
-        self.n_files_per_snap = self.params["NumFilesPerSnapshot"]
+        try:
+            self.n_files_per_snap = self.params["NumFilesPerSnapshot"]
+        except:
+            self.n_files_per_snap = 1
 
         if self.n_files_per_snap>1:
             self.snapshot_dir = self.output_folder+'/snapdir_%03d'

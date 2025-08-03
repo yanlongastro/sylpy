@@ -332,10 +332,10 @@ def snapshot_visualization(fig, ax, filename, rmax, center=[0,0,0], field="Masse
         ax.set_xticks([])
         ax.set_yticklabels([])
         ax.set_yticks([])
-        ax.set_facecolor((1.0, 0.0, 0.0, 0.0))
-        mpl.rcParams.update({
-            "figure.facecolor":  (1.0, 0.0, 0.0, 0.0),  # red   with alpha = 30%
-        })
+        # ax.set_facecolor((1.0, 0.0, 0.0, 0.0))
+        # mpl.rcParams.update({
+        #     "figure.facecolor":  (1.0, 0.0, 0.0, 0.0),  # red   with alpha = 30%
+        # })
     if message is not None:
         ax.annotate(message, (6, 6), xycoords='axes points', color=text_color, va='bottom', ha='left')
     if empty_map:
@@ -387,4 +387,3 @@ def volume_rendering(sim, sid, rmax=4, res=128, overwrite=False):
     source.tfh.set_log(True)
     source.tfh.grey_opacity = True
     sc.save(filename, sigma_clip=6.0)
-    
