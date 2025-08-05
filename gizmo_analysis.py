@@ -250,10 +250,14 @@ class snapshot:
             else:
                 return list(f[path].keys())
         
-    def gas(self, attr, partial=None, near_bhid=None):
+    def gas(self, attr, partial=None, ids=None, near_bhid=None):
         res = self.open('PartType0/'+attr)
         if near_bhid is not None:
             partial = self.find_gas_near_bh(near_bhid)
+        if ids is not None: # select particles with certain ids
+            all_ids = self.open('PartType0/ParticleIDs')
+            sorter = np.argsort(all_ids)
+            partial = sorter[np.searchsorted(all_ids, ids, sorter=sorter)]
         if partial is None:
             return res
         else:
@@ -614,11 +618,13 @@ class simulation:
         mr.sort()
         return (mr*1e10, 1-np.array(range(0, len(mr)))/len(mr))
     
-    def get_gas_history(self, attr='Masses', method='sum', percentiles=[16, 50, 84], crit_density=None, radius_cut=None, ids=None):
+    def get_gas_history(self, attr='Masses', method='sum', percentiles=[16, 50, 84], crit_density=None, radius_cut=None, ids=None, sids=None):
         # radius_cut: only return gas out side the radius, in code unit
         age = []
         history = []
-        for i in range(self.last+1):
+        if sids is None:
+            sids = list(range(self.last+1))
+        for i in sids:
             sp = snapshot(self.snapshot_file%i)
             age.append(sp.time)
 
