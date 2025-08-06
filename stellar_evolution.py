@@ -246,7 +246,7 @@ def stellar_luminosity_tout96(m, z):
             cs[i] += r[j]*lgz**j
     return (cs[0]*m**5.5 + cs[1]*m**11)/(cs[2] +m**3 +cs[3]*m**5 +cs[4]*m**7 +cs[5]*m**8 +cs[6]*m**9.5)
     
-def stellar_radius_tout96(m, z):
+def stellar_radius_tout96(m, z=0.02):
     cs = np.zeros(9)
     lgz = np.log10(z/0.02)
     for i in range(9):
