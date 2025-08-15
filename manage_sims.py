@@ -178,7 +178,7 @@ def estimate_simulation_runtime(folder, diff=False, t1=None, output_dir='output'
         return res
 
 
-def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slurm', max_jobs=1000):
+def auto_resubmit_sims(sims, resubmit=False, fresh_start=False, batch_name='submit.sh', system='slurm', max_jobs=1000):
     """
     Display the status of the simulations and resubmit the stopped ones.
     :param sims: list of simulation directories
@@ -222,7 +222,7 @@ def auto_resubmit_sims(sims, resubmit=False, batch_name='submit.sh', system='slu
         # remove strange core.* files
         subprocess.run(["rm", "-f", "core.*"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if st==-1:
-            if num_snaps<=0:
+            if num_snaps<=0 or fresh_start:
                 exe = 'submit'
                 print('Start ', end='')
             else:

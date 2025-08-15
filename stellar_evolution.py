@@ -264,3 +264,60 @@ def measure_mass_function(m, nbins=21, mmin=0.01, mmax=100):
     logmc = (bins[1:]+bins[:-1])/2
     mc = np.exp(logmc)
     return mc, val/mc
+
+
+def fire3_SNe_model(t_gyr):
+    """
+    input: time in gyr
+    output: Msne, yield table
+    """
+    t=t_gyr
+    tmin=0.0037
+    tbrk=0.0065
+    tmax=0.044
+    Mmax=35.
+    Mbrk=10.
+    Mmin=6.
+    yields = np.zeros(11)
+
+    if t<=tbrk:
+        Msne=Mmax*pow(t/tmin, np.log(Mbrk/Mmax)/np.log(tbrk/tmin))
+    else:
+        Msne=Mbrk*pow(t/tbrk, np.log(Mmin/Mbrk)/np.log(tmax/tbrk))
+
+    i_tvec = 5
+    tvec=[3.7, 8., 18., 30., 44.] # time in Myr
+    fvec = [
+            [4.61e-01, 3.30e-01, 3.58e-01, 3.65e-01, 3.59e-01], # He [IMF-mean y=3.67e-01]  [note have to remove normal solar correction and take care with winds]
+            [2.37e-01, 8.57e-03, 1.69e-02, 9.33e-03, 4.47e-03], # C  [IMF-mean y=3.08e-02]  [note care needed in fitting out winds: wind=6.5e-3, ejecta_only=1.0e-3]
+            [1.07e-02, 3.48e-03, 3.44e-03, 3.72e-03, 3.50e-03], # N  [IMF-mean y=4.47e-03]  [some care needed with winds, but not as essential]
+            [9.53e-02, 1.02e-01, 9.85e-02, 1.73e-02, 8.20e-03], # O  [IMF-mean y=7.26e-02]  [reasonable - generally IMF-integrated alpha-element total mass-yields lower vs fire-2 by factor ~0.7 or so]
+            [2.60e-02, 2.20e-02, 1.93e-02, 2.70e-03, 2.75e-03], # Ne [IMF-mean y=1.58e-02]  [roughly a hybrid of fit direct to ejecta and fit to all mass as above, truncating at highest masses]
+            [2.89e-02, 1.25e-02, 5.77e-03, 1.03e-03, 1.03e-03], # Mg [IMF-mean y=9.48e-03]  [fit directly on ejecta and ignore mass-fraction rescaling since that's not reliable at early times: this gives a reasonable number. important to note that early SNe dominate Mg here, quite strongly]
+            [4.12e-04, 7.69e-03, 8.73e-03, 2.23e-03, 1.18e-03], # Si [IMF-mean y=4.53e-03]  [lots comes from 1a's, so low here isn't an issue]
+            [3.63e-04, 5.61e-03, 5.49e-03, 1.26e-03, 5.75e-04], # S  [IMF-mean y=3.01e-03]  [more from Ia's]
+            [4.28e-05, 3.21e-04, 6.00e-04, 1.84e-04, 9.64e-05], # Ca [IMF-mean y=2.77e-04]  [Ia]
+            [5.46e-04, 2.18e-03, 1.08e-02, 4.57e-03, 1.83e-03]  # Fe [IMF-mean y=4.11e-03]  [Ia]
+            ] # compare nomoto '06: y = [He: 3.69e-1, C: 1.27e-2, N: 4.56e-3, O: 1.11e-1, Ne: 3.81e-2, Mg: 9.40e-3, Si: 8.89e-3, S: 3.78e-3, Ca: 4.36e-4, Fe: 7.06e-3]
+                # /* ok now use the fit parameters above for the piecewise power-law components to define the yields at each time */
+    t_myr=t_gyr*1000.
+    i_t=-1
+    for k in range(i_tvec):
+        if t_myr>tvec[k]:
+            i_t=k
+
+    for k in range(10):
+        i_y = k + 1
+        if i_t<0:
+            yields[i_y]=fvec[k][0]
+        elif (i_t>=i_tvec-1):
+            yields[i_y]=fvec[k][i_tvec-1]
+        else: 
+            yields[i_y] = fvec[k][i_t] * pow(t_myr/tvec[i_t] , np.log(fvec[k][i_t+1]/fvec[k][i_t]) / np.log(tvec[i_t+1]/tvec[i_t]))
+
+    # /* sum heavy element yields to get the 'total Z' yield here, multiplying by a small correction term to account for trace species not explicitly followed above [mean for CC] */
+    yields[0]=0
+    for k in range(2, 11):
+        yields[0] += 1.0144 * yields[k]
+        
+    return Msne, yields
