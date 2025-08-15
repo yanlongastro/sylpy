@@ -178,13 +178,15 @@ def estimate_simulation_runtime(folder, diff=False, t1=None, output_dir='output'
         return res
 
 
-def auto_resubmit_sims(sims, resubmit=False, fresh_start=False, batch_name='submit.sh', system='slurm', max_jobs=1000):
+def auto_resubmit_sims(sims, resubmit=False, fresh_start=False, fresh_start_all=False, batch_name='submit.sh', system='slurm', max_jobs=1000):
     """
     Display the status of the simulations and resubmit the stopped ones.
     :param sims: list of simulation directories
     :param resubmit: bool, whether to resubmit the stopped simulations
     :param batch_name: str, name of the batch file
     :param system: str, 'torque' or 'slurm'
+    fresh_start: fresh start any jobs that is not complete
+    fresh_start_all: used with above, fresh start even if it is complete
     :return: None
     """
     i = 0
@@ -211,7 +213,8 @@ def auto_resubmit_sims(sims, resubmit=False, fresh_start=False, batch_name='subm
         print('%-25s'%(d_runtime+' > '+d_runtime_now), end='\t')
         if st<0 and num_snaps>num_snaps_max:
             print("Done!")
-            continue
+            if not fresh_start_all:
+                continue
         n_active += 1
         if st==1:
             print("R  %s"%jid)
@@ -221,7 +224,7 @@ def auto_resubmit_sims(sims, resubmit=False, fresh_start=False, batch_name='subm
         os.chdir(sim)
         # remove strange core.* files
         subprocess.run(["rm", "-f", "core.*"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if st==-1:
+        if st==-1 or fresh_start_all:
             if num_snaps<=0 or fresh_start:
                 exe = 'submit'
                 print('Start ', end='')
