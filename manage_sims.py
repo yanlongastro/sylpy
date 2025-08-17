@@ -103,7 +103,7 @@ def read_params(file):
 
     for k in ['UnitMass_in_g', 'UnitLength_in_cm', 'UnitVelocity_in_cm_per_s', 'UnitMagneticField_in_gauss']:
         if not (k in res.keys()):
-            res[k] = 1.
+            res[k] = '1.0'
             
     # convert strings to correct forms of values
     for k in res.keys():
@@ -225,7 +225,7 @@ def auto_resubmit_sims(sims, resubmit=False, fresh_start=False, fresh_start_all=
         # remove strange core.* files
         subprocess.run(["rm", "-f", "core.*"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if st==-1 or fresh_start_all:
-            if num_snaps<=0 or fresh_start:
+            if num_snaps<=0 or fresh_start or fresh_start_all:
                 exe = 'submit'
                 print('Start ', end='')
             else:
