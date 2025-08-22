@@ -17,7 +17,7 @@ class cluster:
         return spherical_density_profile(self.mass, self.position, dN=dN, dr=dr, dlogr=dlogr, cdf=cdf, projection=projection)
 
 
-def spherical_density_profile(position, mass=None, dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
+def spherical_density_profile(position, mass=None, volume_density=True, dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
     """
     For a given mass dist, return the mass profile
 
@@ -75,6 +75,8 @@ def spherical_density_profile(position, mass=None, dN=100, dr=None, dlogr=0.05, 
             dV = (r1**3-r0**3)*np.pi*4/3
         if projection=='2d':
             dV = (r1**2-r0**2)*np.pi
+        if not volume_density:
+            dV = step
         rho_tmp = dM/dV
         r_tmp = (r0+r1)/2
         r.append(r_tmp)
