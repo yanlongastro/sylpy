@@ -14,10 +14,13 @@ class cluster:
         self.half_mass_radius_2d = half_mass_radius(mass, position, projection='2d')
 
     def mass_profile(self, dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
-        return spherical_density_profile(self.mass, self.position, dN=dN, dr=dr, dlogr=dlogr, cdf=cdf, projection=projection)
+        return spherical_density_profile(self.position, self.mass, dN=dN, dr=dr, dlogr=dlogr, cdf=cdf, projection=projection)
 
 
-def spherical_density_profile(position, mass=None, volume_density=True, dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
+def spherical_density_profile(position, mass=None, dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
+    return radial_profile(position, mass, method='density', dN=dN, dr=dr, dlogr=dlogr, cdf=cdf, projection=projection)
+
+def radial_profile(position, mass=None, method='density', dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
     """
     For a given mass dist, return the mass profile
 
@@ -35,6 +38,8 @@ def spherical_density_profile(position, mass=None, volume_density=True, dN=100, 
         Whether to show the cumulative distribution
     projection : string, '2d' or '3d'
         Projection that determines if this is a 3d or 2d distribution function
+    method : string, 'density' or 'mean' or 'std'
+        Whether to compute the density or the mean or the std in each bin
     """
     if mass is None:
         mass = np.ones(len(position))
@@ -75,9 +80,11 @@ def spherical_density_profile(position, mass=None, volume_density=True, dN=100, 
             dV = (r1**3-r0**3)*np.pi*4/3
         if projection=='2d':
             dV = (r1**2-r0**2)*np.pi
-        if not volume_density:
+        if method=='mean':
             dV = step
         rho_tmp = dM/dV
+        if method=='std':
+            rho_tmp = np.std(mass[i:i+step])
         r_tmp = (r0+r1)/2
         r.append(r_tmp)
         rho.append(rho_tmp)
