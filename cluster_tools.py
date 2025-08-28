@@ -20,7 +20,7 @@ class cluster:
 def spherical_density_profile(position, mass=None, dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
     return radial_profile(position, mass, method='density', dN=dN, dr=dr, dlogr=dlogr, cdf=cdf, projection=projection)
 
-def radial_profile(position, mass=None, method='density', dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d'):
+def radial_profile(position, mass=None, method='density', dN=100, dr=None, dlogr=0.05, cdf=False, projection='3d', percentiles=[16, 50, 84]):
     """
     For a given mass dist, return the mass profile
 
@@ -38,7 +38,7 @@ def radial_profile(position, mass=None, method='density', dN=100, dr=None, dlogr
         Whether to show the cumulative distribution
     projection : string, '2d' or '3d'
         Projection that determines if this is a 3d or 2d distribution function
-    method : string, 'density' or 'mean' or 'std'
+    method : string, 'density' or 'mean' or 'std' or percentile
         Whether to compute the density or the mean or the std in each bin
     """
     if mass is None:
@@ -85,6 +85,8 @@ def radial_profile(position, mass=None, method='density', dN=100, dr=None, dlogr
         rho_tmp = dM/dV
         if method=='std':
             rho_tmp = np.std(mass[i:i+step])
+        if method=='percentile':
+            rho_tmp = np.percentile(mass[i:i+step], percentiles)
         r_tmp = (r0+r1)/2
         r.append(r_tmp)
         rho.append(rho_tmp)
