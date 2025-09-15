@@ -337,7 +337,7 @@ def blackbody_lum_frac(E_lower, E_upper, T_eff):
         f_upper = 1 - (0.15398973382026504*(6. + x2*(6. + x2*(3. + x2))))*np.exp(-x2); # approximation of Planck integral for large x
     return max(f_upper - f_lower, 0)
 
-def stellar_uv_luminosity(m):
+def stellar_band_luminosity(m, band='UV'):
     """
     m: stellar mass in Msun
     return: uv luminosity in Lsun
@@ -346,6 +346,16 @@ def stellar_uv_luminosity(m):
     l_sol = stellar_luminosity_fire(m)
     r_sol = m**0.738
     T_eff = 5770.*pow(l_sol/r_sol**2, 0.25) # in K
-    f_uv = blackbody_lum_frac(3.444, 8, T_eff)
+
+    bands = {'UV': (3.444, 8),
+             'optical': (0.4133, 3.444),
+             'IR': (0, 0.4133),
+            }
+
+    if isinstance(band, str):
+        freqs = bands[band]
+    else:
+        freqs = band
+    f_uv = blackbody_lum_frac(freqs[0], freqs[1], T_eff)
     l_uv = l_sol * f_uv
     return l_uv
