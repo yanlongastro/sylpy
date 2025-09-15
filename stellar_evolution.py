@@ -205,20 +205,20 @@ def kroupa_imf_weighted_luminosity(m_cut, m_min=0.01, m_max=300, slopes=[-0.3, -
 def kroupa_light_to_mass_ratio(m_cut, m_min=0.001, m_max=300, slopes=[-0.3, -1.3, -2.3, -2.3]):
     return kroupa_imf_weighted_luminosity(m_cut, m_min, m_max, slopes)/kroupa_imf_normalized(m_cut, m_min, m_max, slopes, cdf=True, mass_weighted=True)
 
-def fire_light_mass_ratio(stellar_age_in_gyr, z_in_solar=1):
-    # fire-3: 2203.00040, but this is fire-2
+def fire_light_mass_ratio(stellar_age_in_gyr, z_in_solar=1,):
+    # slightly different from 2203.00040, 
     t1=0.0012
     t2=0.0037
     f1=800.
     f2=1100.*pow(z_in_solar, -0.1)
     tx=np.log10(stellar_age_in_gyr/t2)
-    t_g=np.log10(stellar_age_in_gyr/1.2)/0.05
+    tg=np.log10(stellar_age_in_gyr/1.2)/0.05
     if(stellar_age_in_gyr<=t1):
         lum=f1
     elif (stellar_age_in_gyr<=t2):
         lum=f1*pow(stellar_age_in_gyr/t1,np.log(f2/f1)/np.log(t2/t1))
     else:
-        lum=f2*pow(10.,-1.82*tx+0.42*tx*tx-0.07*tx*tx*tx)*(1.+1.2*np.exp(-0.5*t_g*t_g))
+        lum=f2*pow(10., -1.82*tx+0.42*tx**2-0.07*tx**3)*(1.+1.2*np.exp(-0.5*tg**2))
     return lum
 
 def stellar_luminosity_fire(m):
@@ -321,3 +321,31 @@ def fire3_SNe_model(t_gyr):
         yields[0] += 1.0144 * yields[k]
         
     return Msne, yields
+
+
+def blackbody_lum_frac(E_lower, E_upper, T_eff):
+    k_B = 8.617e-5 # Boltzmann constant in eV/K
+    x1 = E_lower / (k_B * T_eff)
+    x2 = E_upper / (k_B * T_eff)
+    if x1 < 3.40309:
+        f_lower = (131.4045728599595*x1*x1*x1)/(2560. + x1*(960. + x1*(232. + 39.*x1))); # approximation of integral of Planck function from 0 to x1, valid for x1 << 1
+    else:
+        f_lower = 1 - (0.15398973382026504*(6. + x1*(6. + x1*(3. + x1))))*np.exp(-x1); # approximation of Planck integral for large x
+    if x2 < 3.40309:
+        f_upper = (131.4045728599595*x2*x2*x2)/(2560. + x2*(960. + x2*(232. + 39.*x2))) # approximation of integral of Planck function from 0 to x2, valid for x2 << 1
+    else:
+        f_upper = 1 - (0.15398973382026504*(6. + x2*(6. + x2*(3. + x2))))*np.exp(-x2); # approximation of Planck integral for large x
+    return max(f_upper - f_lower, 0)
+
+def stellar_uv_luminosity(m):
+    """
+    m: stellar mass in Msun
+    return: uv luminosity in Lsun
+    """
+    # stellar effective temperature and radius fitting from Tout et al. 1996
+    l_sol = stellar_luminosity_fire(m)
+    r_sol = m**0.738
+    T_eff = 5770.*pow(l_sol/r_sol**2, 0.25) # in K
+    f_uv = blackbody_lum_frac(3.444, 8, T_eff)
+    l_uv = l_sol * f_uv
+    return l_uv
