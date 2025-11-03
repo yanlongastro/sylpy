@@ -695,8 +695,8 @@ class simulation:
                 os.remove(f)
         return overwrite, png_file
     
-    def make_movie(self, png_folder='pngs', freamerate=20):
+    def make_movie(self, png_folder='pngs', framerate=20):
         png_folder = self.output_folder+"/%s/"%png_folder
         png_file = png_folder+'/snapshot_%03d.png'
         mp4_output = png_folder+'/movie.mp4'
-        os.system("ffmpeg -y -framerate %d -i %s -c:v libx264 -pix_fmt yuv420p -vf 'scale=trunc(iw/2)*2:trunc(ih/2)*2' %s"%(freamerate, png_file, mp4_output))
+        os.system("ffmpeg -y -framerate %g -i %s -c:v libx264 -pix_fmt yuv420p -vf 'scale=trunc(iw/2)*2:trunc(ih/2)*2' %s"%(framerate, png_file, mp4_output))
