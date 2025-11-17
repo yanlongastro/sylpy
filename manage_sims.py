@@ -177,15 +177,22 @@ def estimate_simulation_runtime(folder, diff=False, t1=None, output_dir='output'
         res += "%d\""%ss
         return res
 
+def cancel_job(jid, system, verbose=True):
+    if system == 'torque':
+        res = subprocess.run(["qdel", "%s"%jid], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if system == 'slurm':
+        res = subprocess.run(["scancel", "%s"%jid], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if verbose:
+        print('> cancelled')
 
-def auto_resubmit_sims(sims, resubmit=False, fresh_start=False, fresh_start_all=False, batch_name='submit.sh', system='slurm', max_jobs=1000):
+def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incomplete=False, fresh_start_all=False, batch_name='submit.sh', system='slurm', max_jobs=1000):
     """
     Display the status of the simulations and resubmit the stopped ones.
     :param sims: list of simulation directories
     :param resubmit: bool, whether to resubmit the stopped simulations
     :param batch_name: str, name of the batch file
     :param system: str, 'torque' or 'slurm'
-    fresh_start: fresh start any jobs that is not complete
+    fresh_start_incomplete: fresh start any jobs that is not complete
     fresh_start_all: used with above, fresh start even if it is complete
     :return: None
     """
@@ -220,12 +227,15 @@ def auto_resubmit_sims(sims, resubmit=False, fresh_start=False, fresh_start_all=
             print("R  %s"%jid)
         if st==0:
             print("PD %s"%jid)
+        if cancel_all:
+            cancel_job(jid, system)
+            continue
 
         os.chdir(sim)
         # remove strange core.* files
         subprocess.run(["rm", "-rf", "core.*"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if st==-1 or fresh_start_all:
-            if num_snaps<=0 or fresh_start or fresh_start_all:
+            if num_snaps<=0 or fresh_start_incomplete or fresh_start_all:
                 exe = 'submit'
                 print('Start ', end='')
             else:
@@ -241,11 +251,7 @@ def auto_resubmit_sims(sims, resubmit=False, fresh_start=False, fresh_start_all=
             print('')
         if st==-2:
             print('Held ', end='')
-            if system == 'torque':
-                res = subprocess.run(["qdel", "%s"%jid], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if system == 'slurm':
-                res = subprocess.run(["scancel", "%s"%jid], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print('> cancelled')
+            cancel_job(jid, system)
         os.chdir(cwd)
 
         if n_active>=max_jobs:
