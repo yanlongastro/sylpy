@@ -146,7 +146,7 @@ def get_job_status(folder='.', batch_name='submit.sh', system='slurm', username=
     if len(st)==0:
         return -1, None # stopped
     if 'H' in st:
-        return -2, ii[0] # held
+        return 2, ii[0] # held
     
 def estimate_simulation_runtime(folder, diff=False, t1=None, output_dir='output', snapshot_template='snapshot_%03d.hdf5', human=False):
     sim_folder = folder+'/'+output_dir
@@ -229,7 +229,8 @@ def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incom
             print("PD %s"%jid)
         if cancel_all:
             cancel_job(jid, system)
-            continue
+            if not fresh_start_all:
+                continue
 
         os.chdir(sim)
         # remove strange core.* files
@@ -249,7 +250,7 @@ def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incom
                 jid_ = res.stdout.decode('UTF-8').split()[-1]
                 print('> %s'%jid_)
             print('')
-        if st==-2:
+        if st==2:
             print('Held ', end='')
             cancel_job(jid, system)
         os.chdir(cwd)
