@@ -227,7 +227,7 @@ def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incom
             print("R  %s"%jid)
         if st==0:
             print("PD %s"%jid)
-        if cancel_all:
+        if cancel_all and st>=0:
             cancel_job(jid, system)
             if not fresh_start_all:
                 continue

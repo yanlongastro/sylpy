@@ -366,7 +366,7 @@ class snapshot:
             }
     
     
-def get_num_snaps(path, n_files_per_snap=1, timed=True):
+def get_num_snaps(path, n_files_per_snap=1, timed=True, dt=1):
     if n_files_per_snap == 1:
         snapshot_ = 'snapshot_*.hdf5'
         snapshot = 'snapshot_%03d.hdf5'
@@ -385,7 +385,7 @@ def get_num_snaps(path, n_files_per_snap=1, timed=True):
         if not os.path.exists(file):
             break
         t = os.path.getmtime(file)
-        if t>=tmax:
+        if t>=tmax-dt: # allow small time difference
             imax += 1
             tmax = t
         else:
