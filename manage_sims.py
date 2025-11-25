@@ -205,10 +205,10 @@ def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incom
     for sim in sims:
         try:
             if os.path.getsize(sim+'gizmo.out')/1024**3 > 1:
-                subprocess.run(["head -n 1000 gizmo.out > gizmo.out"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                subprocess.run("head -n 1000 gizmo.out > gizmo.out".split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except:
             pass
-        
+
         num_snaps = ga.get_num_snaps(sim+'/output')
         st, jid = get_job_status(sim, batch_name=batch_name, system=system)
         params = read_params(sim+'/params.txt')
