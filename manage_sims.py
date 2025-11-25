@@ -204,7 +204,7 @@ def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incom
     print('Current working directory: ' + cwd)
     for sim in sims:
         try:
-            if os.path.getsize(sim+'gizmo.out')/1024**3 > 1:
+            if os.path.getsize(sim+'/gizmo.out')/1024**3 > 1:
                 subprocess.run("head -n 1000 gizmo.out > gizmo.out".split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except:
             pass
