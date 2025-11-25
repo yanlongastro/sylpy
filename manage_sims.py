@@ -235,6 +235,13 @@ def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incom
         os.chdir(sim)
         # remove strange core.* files
         subprocess.run(["rm", "-rf", "core.*"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        try:
+            if os.path.getsize(sim+'gizmo.out')/1024**3 > 1:
+                subprocess.run(["head -n 1000 gizmo.out > gizmo.out"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except:
+            pass
+
         if st==-1 or fresh_start_all:
             if num_snaps<=0 or fresh_start_incomplete or fresh_start_all:
                 exe = 'submit'
