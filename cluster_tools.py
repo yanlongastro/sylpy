@@ -93,7 +93,10 @@ def radial_profile(position, mass=None, method='density', dN=100, dr=None, dlogr
         i += step
     return np.array(r), np.array(rho)
 
-def half_mass_radius(mass, position, projection='3d', rmax=None):
+def fraction_mass_radius(mass, position, projection='3d', rmax=None, mass_fraction=0.5):
+    """
+    mass_fraction: float between 0 and 1, the fraction of mass to enclose
+    """
     if projection=='3d':
         radius = np.linalg.norm(position, axis=-1)
     if projection=='2d':
@@ -107,4 +110,7 @@ def half_mass_radius(mass, position, projection='3d', rmax=None):
         radius = radius[sort]
         cum_mass = cum_mass[sort]
     r_m = interpolate.InterpolatedUnivariateSpline(cum_mass, radius)
-    return r_m(cum_mass[-1]/2)
+    return r_m(cum_mass[-1]*mass_fraction)
+
+def half_mass_radius(mass, position, projection='3d', rmax=None):
+    return fraction_mass_radius(mass, position, projection=projection, rmax=rmax, mass_fraction=0.5)

@@ -68,7 +68,7 @@ def set_star_softening(M, Res):
     dM = M/Res**3
     rho = 1000/Na # 1000 mp/cm^3
     rho /= Msun_in_g /pc_in_cm**3
-    dr = (3/4/np.pi *dM/rho)**(1/3) /2.8
+    dr = (3/4/np.pi *dM/rho)**(1/3)
     # print(dM, drho)
     return dr
 
