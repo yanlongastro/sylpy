@@ -229,7 +229,7 @@ def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incom
             print("R  %s"%jid)
             last_snap_file = sim+'/output/'+snapshot_template%(num_snaps-1)
             if os.path.getsize(last_snap_file)<1000: # if the latest snapshot is too small, we consider it as incomplete and resubmit
-                print("** Latest snapshot is too small, will cancel and resubmit later.")
+                print("** Latest snapshot is too small, will remove it, cancel and resubmit later.")
                 subprocess.run(["rm", last_snap_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 cancel_job(jid, system)
         if st==0:
