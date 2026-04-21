@@ -185,7 +185,9 @@ def cancel_job(jid, system, verbose=True):
     if verbose:
         print('> cancelled')
 
-def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incomplete=False, fresh_start_all=False, batch_name='submit.sh', system='slurm', max_jobs=1000):
+def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incomplete=False, 
+                       snapshot_template='snapshot_%03d.hdf5',
+                       fresh_start_all=False, batch_name='submit.sh', system='slurm', max_jobs=1000):
     """
     Display the status of the simulations and resubmit the stopped ones.
     :param sims: list of simulation directories
@@ -207,9 +209,9 @@ def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incom
         st, jid = get_job_status(sim, batch_name=batch_name, system=system)
         params = read_params(sim+'/params.txt')
         num_snaps_max = params['TimeMax']/params['TimeBetSnapshot']
-        runtime = estimate_simulation_runtime(sim, human=True)
-        d_runtime = estimate_simulation_runtime(sim, human=True, diff=True)
-        d_runtime_now = estimate_simulation_runtime(sim, human=True, diff=True, t1=time.time())
+        runtime = estimate_simulation_runtime(sim, human=True, snapshot_template=snapshot_template)
+        d_runtime = estimate_simulation_runtime(sim, human=True, diff=True, snapshot_template=snapshot_template)
+        d_runtime_now = estimate_simulation_runtime(sim, human=True, diff=True, t1=time.time(), snapshot_template=snapshot_template)
         pp = ga.parse_path(sim)
         i += 1
 
@@ -225,6 +227,9 @@ def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incom
         n_active += 1
         if st==1:
             print("R  %s"%jid)
+            if os.path.getsize(sim+'/output/'+snapshot_template%(num_snaps-1))<1000: # if the latest snapshot is too small, we consider it as incomplete and resubmit
+                print("** Latest snapshot is too small, consider it as incomplete and resubmit.")
+                st = -1
         if st==0:
             print("PD %s"%jid)
         if cancel_all and st>=0:
