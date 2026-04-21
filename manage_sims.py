@@ -230,6 +230,7 @@ def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incom
             if os.path.getsize(sim+'/output/'+snapshot_template%(num_snaps-1))<1000: # if the latest snapshot is too small, we consider it as incomplete and resubmit
                 print("** Latest snapshot is too small, consider it as incomplete and resubmit.")
                 st = -1
+                cancel_job(jid, system)
         if st==0:
             print("PD %s"%jid)
         if cancel_all and st>=0:
