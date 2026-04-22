@@ -175,8 +175,8 @@ def calculate_circular_velocity(center, ms, xs, zlim=np.inf):
 def safe_png_to_video(png_file, mp4_output, framerate=24):
     cmd = [
         "ffmpeg",
-        "-hide_banner",
-        "-loglevel", "error",
+        # "-hide_banner",
+        # "-loglevel", "error",
         "-y",
         "-framerate", str(framerate),
         "-i", png_file,
