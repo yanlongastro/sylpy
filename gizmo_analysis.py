@@ -200,6 +200,19 @@ def safe_png_to_video(png_file, mp4_output, framerate=24):
         "-pix_fmt", "yuv420p",
         mp4_output
     ]
+
+    cmd = [
+        "ffmpeg", "-y",
+        "-framerate", str(framerate),
+        "-i", png_file,
+        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+        "-c:v", "libx264",
+        "-preset", "veryfast",
+        "-crf", "23",
+        "-pix_fmt", "yuv420p",
+        "-threads", "8",
+        mp4_output
+    ]
     
     result = subprocess.run(cmd)
     return result.returncode == 0
