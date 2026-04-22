@@ -173,7 +173,6 @@ def calculate_circular_velocity(center, ms, xs, zlim=np.inf):
     return dr, vc
 
 def safe_png_to_video(png_file, mp4_output, framerate=24):
-    # Use crop filter instead of scale - preserves original quality
     cmd = [
         "ffmpeg",
         "-hide_banner",
@@ -183,14 +182,11 @@ def safe_png_to_video(png_file, mp4_output, framerate=24):
         "-i", png_file,
         "-c:v", "libx264",
         "-pix_fmt", "yuv420p",
-        "-vf", "crop=trunc(iw/2)*2:trunc(ih/2)*2",
-        "-crf", "18",
-        "-preset", "medium",
-        "-movflags", "+faststart",
+        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
         mp4_output
     ]
     
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd)
     return result.returncode == 0
 
 class snapshot:
