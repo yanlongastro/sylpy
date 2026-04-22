@@ -703,4 +703,4 @@ class simulation:
         png_folder = self.output_folder+"/%s/"%png_folder
         png_file = png_folder+'/snapshot_%03d.png'
         mp4_output = png_folder+'/movie.mp4'
-        os.system("ffmpeg -hide_banner -loglevel error -y -framerate %g -i %s -c:v libx264 -pix_fmt yuv420p -vf 'scale=trunc(iw/2)*2:trunc(ih/2)*2' %s"%(framerate, png_file, mp4_output))
+        os.system(f'ffmpeg -hide_banner -loglevel error -y -framerate {framerate} -i "{png_file}" -c:v libx264 -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -movflags +faststart "{mp4_output}"')
