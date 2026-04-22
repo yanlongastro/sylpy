@@ -14,6 +14,7 @@ import glob
 import os
 from . import constants_units as cu
 from . import manage_sims as ms
+import subprocess
 
 
 unit_time_in_yr = 206265*1000*1.5e8/(86400*365)
@@ -172,31 +173,22 @@ def calculate_circular_velocity(center, ms, xs, zlim=np.inf):
     return dr, vc
 
 def safe_png_to_video(png_file, mp4_output, framerate=24):
-    # Escape spaces and special characters in file paths
-    png_file_escaped = png_file.replace('"', '\\"').replace('$', '\\$')
-    mp4_output_escaped = mp4_output.replace('"', '\\"').replace('$', '\\$')
+    cmd = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel", "error",
+        "-y",
+        "-framerate", str(framerate),
+        "-i", png_file,
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+        "-movflags", "+faststart",
+        mp4_output
+    ]
     
-    # Try primary command with multiple safety measures
-    cmd = f'ffmpeg -hide_banner -loglevel error -y -framerate {framerate} -i "{png_file_escaped}" -c:v libx264 -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1" -movflags +faststart -vsync cfr -r {framerate} "{mp4_output_escaped}"'
-    
-    result = os.system(cmd)
-    
-    if result != 0:
-        # Fallback: Remove scale filter and use simpler parameters
-        cmd2 = f'ffmpeg -hide_banner -loglevel error -y -framerate {framerate} -i "{png_file_escaped}" -c:v libx264 -pix_fmt yuv420p -vf "format=yuv420p" -movflags +faststart -vsync cfr -r {framerate} "{mp4_output_escaped}"'
-        result = os.system(cmd2)
-    
-    if result != 0:
-        # Fallback 2: Use anamorphic encoding with no complex filters
-        cmd3 = f'ffmpeg -hide_banner -loglevel error -y -framerate {framerate} -i "{png_file_escaped}" -c:v libx264 -pix_fmt yuv420p -vf "null" -movflags +faststart "{mp4_output_escaped}"'
-        result = os.system(cmd3)
-    
-    if result != 0:
-        # Fallback 3: Use mpeg4 codec as last resort (more compatible but lower quality)
-        cmd4 = f'ffmpeg -hide_banner -loglevel error -y -framerate {framerate} -i "{png_file_escaped}" -c:v mpeg4 -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -movflags +faststart "{mp4_output_escaped}"'
-        result = os.system(cmd4)
-    
-    return result == 0
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    return result.returncode == 0
 
 class snapshot:
     def __init__(self, filename, snapshot_id=None, num_files_per_snapshot=1, snapshot_sub_id=None, showinfo=False):
@@ -730,6 +722,6 @@ class simulation:
         png_folder = self.output_folder+"/%s/"%png_folder
         png_file = png_folder+'/snapshot_%03d.png'
         mp4_output = png_folder+'/movie.mp4'
-        # safe_png_to_video(png_file, mp4_output, framerate)
-        cmd = f'ffmpeg -hide_banner -loglevel error -y -framerate {framerate} -i "{png_file}" -c:v libx264 -pix_fmt yuv420p -vf "scale=iw-mod(iw\\,2):ih-mod(ih\\,2)" -movflags +faststart "{mp4_output}"'
-        os.system(cmd)
+        safe_png_to_video(png_file, mp4_output, framerate)
+        # cmd = f'ffmpeg -hide_banner -loglevel error -y -framerate {framerate} -i "{png_file}" -c:v libx264 -pix_fmt yuv420p -vf "scale=iw-mod(iw\\,2):ih-mod(ih\\,2)" -movflags +faststart "{mp4_output}"'
+        # os.system(cmd)
