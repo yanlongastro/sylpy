@@ -730,5 +730,5 @@ class simulation:
         png_folder = self.output_folder+"/%s/"%png_folder
         png_file = png_folder+'/snapshot_%03d.png'
         mp4_output = png_folder+'/movie.mp4'
-        safe_png_to_video(png_file, mp4_output, framerate)
-        # os.system(f'ffmpeg -hide_banner -loglevel error -y -framerate {framerate} -i "{png_file}" -c:v libx264 -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -movflags +faststart "{mp4_output}"')
+        # safe_png_to_video(png_file, mp4_output, framerate)
+        os.system(f'ffmpeg -hide_banner -loglevel error -y -framerate {framerate} -i "{png_file}" -c:v libx264 -pix_fmt yuv420p -vf scale=iw-mod(iw,2):ih-mod(ih,2) -movflags +faststart "{mp4_output}"')
