@@ -15,6 +15,7 @@ import os
 from . import constants_units as cu
 from . import manage_sims as ms
 import subprocess
+import time
 
 
 unit_time_in_yr = 206265*1000*1.5e8/(86400*365)
@@ -188,6 +189,39 @@ def safe_png_to_video(png_file, mp4_output, framerate=24):
     
     result = subprocess.run(cmd)
     return result.returncode == 0
+
+def check_video_playable(video_path):
+    # Check if ffprobe can read the video file at all
+    cmd = f'ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -show_entries format=duration,size -of default=noprint_wrappers=1 "{video_path}"'
+    result = os.system(f'{cmd} > nul 2>&1')
+    if result != 0:
+        return False
+    
+    # Verify video codec exists
+    cmd2 = f'ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "{video_path}"'
+    codec = os.popen(cmd2).read().strip()
+    if not codec:
+        return False
+    
+    # Verify duration is valid and positive
+    cmd3 = f'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{video_path}"'
+    duration = os.popen(cmd3).read().strip()
+    if not duration or float(duration) <= 0:
+        return False
+    
+    # Verify width is valid
+    cmd4 = f'ffprobe -v error -select_streams v:0 -show_entries stream=width -of default=noprint_wrappers=1:nokey=1 "{video_path}"'
+    width = os.popen(cmd4).read().strip()
+    
+    # Verify height is valid
+    cmd5 = f'ffprobe -v error -select_streams v:0 -show_entries stream=height -of default=noprint_wrappers=1:nokey=1 "{video_path}"'
+    height = os.popen(cmd5).read().strip()
+    
+    # Check both dimensions are positive integers
+    if not width or not height or int(width) <= 0 or int(height) <= 0:
+        return False
+    
+    return True
 
 class snapshot:
     def __init__(self, filename, snapshot_id=None, num_files_per_snapshot=1, snapshot_sub_id=None, showinfo=False):
@@ -721,6 +755,13 @@ class simulation:
         png_folder = self.output_folder+"/%s/"%png_folder
         png_file = png_folder+'/snapshot_%03d.png'
         mp4_output = png_folder+'/movie.mp4'
-        safe_png_to_video(png_file, mp4_output, framerate)
-        # cmd = f'ffmpeg -hide_banner -loglevel error -y -framerate {framerate} -i "{png_file}" -c:v libx264 -pix_fmt yuv420p -vf "scale=iw-mod(iw\\,2):ih-mod(ih\\,2)" -movflags +faststart "{mp4_output}"'
-        # os.system(cmd)
+
+        iter = 0
+        while True:
+            time.sleep(3)
+            safe_png_to_video(png_file, mp4_output, framerate)
+            iter += 1
+            if check_video_playable(mp4_output) or iter>10:
+                break
+            else:
+                print(f"Retry {iter}: the movie is too small.")
