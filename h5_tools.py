@@ -31,16 +31,50 @@ from pathlib import Path
 #  Core recursive writer
 # --------------------------------------------------------------------------- #
 
-def _write_node(h5_group: h5py.Group, key: str, value) -> None:
+def _write_header_attr(h5_group: h5py.Group, value) -> None:
+    """Store a 'Header' value as HDF5 attributes on *h5_group*.
+
+    - dict  → each key stored as a separate attribute
+    - other → stored as h5_group.attrs["Header"]
+    """
+    if isinstance(value, dict):
+        # Marker so the reader can reconstruct the "Header" dict on round-trip
+        h5_group.attrs["__header_keys__"] = list(value.keys())
+        for k, v in value.items():
+            if isinstance(v, (list, tuple)):
+                h5_group.attrs[str(k)] = np.array(v)
+            elif isinstance(v, np.ndarray):
+                h5_group.attrs[str(k)] = v
+            elif v is None:
+                h5_group.attrs[str(k)] = "__None__"
+            else:
+                h5_group.attrs[str(k)] = v
+    elif isinstance(value, (list, tuple)):
+        h5_group.attrs["Header"] = np.array(value)
+    elif value is None:
+        h5_group.attrs["Header"] = "__None__"
+    else:
+        h5_group.attrs["Header"] = value
+
+
+def _write_node(h5_group: h5py.Group, key: str, value, overwrite: bool = False) -> None:
     """Recursively write *value* into *h5_group* under *key*."""
 
+    if key == "Header":
+        _write_header_attr(h5_group, value)
+        return
+
     if isinstance(value, dict):
-        # Create a sub-group and recurse
         sub = h5_group.require_group(key)
         for k, v in value.items():
-            _write_node(sub, str(k), v)
+            _write_node(sub, str(k), v, overwrite)
+        return
 
-    elif value is None:
+    # Dataset path: remove existing key when overwrite is requested
+    if overwrite and key in h5_group:
+        del h5_group[key]
+
+    if value is None:
         h5_group.create_dataset(key, data="__None__")
 
     elif isinstance(value, bool):
@@ -76,7 +110,8 @@ def _write_node(h5_group: h5py.Group, key: str, value) -> None:
         )
 
 
-def dict_to_hdf5(data: dict, path: str | Path, mode: str = "w") -> None:
+def dict_to_hdf5(data: dict, path: str | Path, mode: str = "w",
+                 overwrite: bool = False) -> None:
     """
     Write *data* (a potentially nested dict) to an HDF5 file at *path*.
 
@@ -87,11 +122,14 @@ def dict_to_hdf5(data: dict, path: str | Path, mode: str = "w") -> None:
     path : str | Path
         Destination .h5 / .hdf5 file.
     mode : str
-        File open mode — "w" (overwrite) or "a" (append/update).
+        File open mode — "w" (overwrite whole file) or "a" (append/update).
+    overwrite : bool
+        When True and mode="a", existing datasets are deleted and re-written
+        instead of raising an error.  Has no effect when mode="w".
     """
     with h5py.File(path, mode) as f:
         for key, value in data.items():
-            _write_node(f, str(key), value)
+            _write_node(f, str(key), value, overwrite)
     print(f"Wrote HDF5 → {path}")
 
 
@@ -132,10 +170,28 @@ def _read_node(node, load_attrs: bool = False):
                 result[k] = _read_node(node[k], load_attrs)
             except Exception:
                 result[k] = None  # dangling soft/external link or unreadable node
-        if load_attrs:
+
+        if node.attrs:
             attrs = _read_attrs(node.attrs)
-            if attrs:
+
+            # Reconstruct "Header" — dict case (written with __header_keys__ marker)
+            if "__header_keys__" in attrs:
+                keys = attrs.pop("__header_keys__")
+                if isinstance(keys, str):
+                    keys = [keys]
+                header = {}
+                for k in keys:
+                    v = attrs.pop(k, None)
+                    header[k] = None if v == "__None__" else v
+                result["Header"] = header
+            # Reconstruct "Header" — scalar/array case
+            elif "Header" in attrs:
+                v = attrs.pop("Header")
+                result["Header"] = None if v == "__None__" else v
+
+            if load_attrs and attrs:
                 result["__attrs__"] = attrs
+
         return result
 
     # ---- Dataset ----
