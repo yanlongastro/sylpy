@@ -67,7 +67,7 @@ def get_all_my_job_info(show_headers=True, system='slurm', username='yanlong'):
             run = []
             run.append(i)
             for k in ['Job_Name', 'job_state', 'resources_used.walltime', 'Resource_List.nodect']:
-                cmd = "qstat -f %s | awk -F= '/%s/ {print $2}' | xargs"%(i, k)
+                cmd = "qstat -f %s | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n\t//g' | awk -F' = ' '/%s/ {print $2}'"%(i, k)
                 res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).stdout.decode('UTF-8').split('\n')[0]
                 run.append(res)
             runs.append(run)
@@ -227,11 +227,12 @@ def auto_resubmit_sims(sims, resubmit=False, cancel_all=False, fresh_start_incom
         n_active += 1
         if st==1:
             print("R  %s"%jid)
-            last_snap_file = sim+'/output/'+snapshot_template%(num_snaps-1)
-            if os.path.getsize(last_snap_file)<1000: # if the latest snapshot is too small, we consider it as incomplete and resubmit
-                print("** Latest snapshot is too small, will remove it, cancel and resubmit later.")
-                subprocess.run(["rm", last_snap_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                cancel_job(jid, system)
+            if num_snaps>0:
+                last_snap_file = sim+'/output/'+snapshot_template%(num_snaps-1)
+                if os.path.getsize(last_snap_file)<1000: # if the latest snapshot is too small, we consider it as incomplete and resubmit
+                    print("** Latest snapshot is too small, will remove it, cancel and resubmit later.")
+                    subprocess.run(["rm", last_snap_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    cancel_job(jid, system)
         if st==0:
             print("PD %s"%jid)
         if cancel_all and st>=0:

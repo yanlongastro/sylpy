@@ -271,6 +271,75 @@ def hdf5_to_dict(path: str | Path, load_attrs: bool = False) -> dict:
     return result
 
 
+
+
+def merge_dicts(dict1, dict2):
+    merged_dict = {}
+
+    # header
+    merged_dict["Header"] = {}
+    for k in ["NumPart_ThisFile", "NumPart_Total"]:
+        merged_dict["Header"][k] = [a + b for a, b in zip(dict1["Header"][k], dict2["Header"][k])]
+    merged_dict["Header"]["Time"] = 0.0
+
+    # particle data
+    for i in range(6):
+        ptype = "PartType%d" % i
+        if (ptype in dict1) or (ptype in dict2):
+            if (ptype in dict1) and (ptype in dict2):
+                shared_keys = set(dict1[ptype]) & set(dict2[ptype])
+                id_offset = len(dict1[ptype]["ParticleIDs"]) + 1 if "ParticleIDs" in shared_keys else 0
+                merged_dict[ptype] = {}
+                for k in shared_keys:
+                    arr1 = dict1[ptype][k]
+                    arr2 = dict2[ptype][k]
+                    if k == "ParticleIDs":
+                        arr2 = arr2 + id_offset
+                    merged_dict[ptype][k] = np.concatenate([arr1, arr2], axis=0)
+            elif ptype in dict1:
+                merged_dict[ptype] = dict(dict1[ptype])
+            else:
+                merged_dict[ptype] = dict(dict2[ptype])
+
+    return merged_dict
+
+
+
+def merge_snapshots(filename1, filename2, output_filename):
+    dict1 = snapshot_to_dict(filename1)
+    dict2 = snapshot_to_dict(filename2)
+    merged = merge_dicts(dict1, dict2)
+    dict_to_snapshot(merged, output_filename)
+
+
+def snapshot_to_dict(filename):
+    import h5py
+    data = {}
+    with h5py.File(filename, "r") as F:
+        if "Header" in F:
+            data["Header"] = dict(F["Header"].attrs)
+        for i in range(6):
+            ptype = "PartType%d" % i
+            if ptype in F:
+                data[ptype] = {k: F[ptype][k][:] for k in F[ptype]}
+    return data
+
+
+def dict_to_snapshot(data, filename):
+    import h5py
+    with h5py.File(filename, "w") as F:
+        grp = F.create_group("Header")
+        for k in data["Header"]:
+            grp.attrs[k] = data["Header"][k]
+        for i in range(6):
+            ptype = "PartType%d" % i
+            if ptype in data:
+                grp = F.create_group(ptype)
+                for k in data[ptype]:
+                    grp.create_dataset(k, data=data[ptype][k])
+
+
+
 # --------------------------------------------------------------------------- #
 #  Demo
 # --------------------------------------------------------------------------- #
