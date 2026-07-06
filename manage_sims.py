@@ -67,7 +67,7 @@ def get_all_my_job_info(show_headers=True, system='slurm', username='yanlong'):
             run = []
             run.append(i)
             for k in ['Job_Name', 'job_state', 'resources_used.walltime', 'Resource_List.nodect']:
-                cmd = "qstat -f %s | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n\t//g' | awk -F' = ' '/%s/ {print $2}'"%(i, k)
+                cmd = r"qstat -f %s | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n\t//g' | awk -F' = ' '$1 ~ /%s$/ {print $2}'" % (i, k)
                 res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).stdout.decode('UTF-8').split('\n')[0]
                 run.append(res)
             runs.append(run)
