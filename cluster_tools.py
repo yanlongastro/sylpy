@@ -73,7 +73,7 @@ def radial_profile(position, mass=None, method='density', dN=100, dr=None, dlogr
                 if step>=len(mass)-i:
                     break
         step = min(step, len(mass)-1-i)
-        dM = np.sum(mass[i:i+step])
+        dM = np.sum(mass[i:i+step], axis=0)
         r1 = radius[i+step] 
         r0 = radius[i]
         if projection=='3d':
@@ -84,9 +84,9 @@ def radial_profile(position, mass=None, method='density', dN=100, dr=None, dlogr
             dV = step
         rho_tmp = dM/dV
         if method=='std':
-            rho_tmp = np.std(mass[i:i+step])
+            rho_tmp = np.std(mass[i:i+step], axis=0)
         if method=='percentile':
-            rho_tmp = np.percentile(mass[i:i+step], percentiles)
+            rho_tmp = np.percentile(mass[i:i+step], percentiles, axis=0)
         r_tmp = (r0+r1)/2
         r.append(r_tmp)
         rho.append(rho_tmp)
