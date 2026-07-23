@@ -60,6 +60,7 @@ def radial_profile(position, mass=None, method='density', dN=100, dr=None, dlogr
     r = []
     rho = []
     step = dN
+    rho_tmp = 0
     while i+step<len(mass):
         step = dN
         if dr is not None: # make sure the curve is not too noisy in some regions
@@ -80,13 +81,17 @@ def radial_profile(position, mass=None, method='density', dN=100, dr=None, dlogr
             dV = (r1**3-r0**3)*np.pi*4/3
         if projection=='2d':
             dV = (r1**2-r0**2)*np.pi
+        if method=='density':
+            rho_tmp = dM/dV
+
         if method=='mean':
-            dV = step
-        rho_tmp = dM/dV
+            rho_tmp = np.mean(mass[i:i+step], axis=0)
         if method=='std':
             rho_tmp = np.std(mass[i:i+step], axis=0)
         if method=='percentile':
             rho_tmp = np.percentile(mass[i:i+step], percentiles, axis=0)
+        if method=='cumsum':
+            rho_temp += dM
         r_tmp = (r0+r1)/2
         r.append(r_tmp)
         rho.append(rho_tmp)
