@@ -91,7 +91,7 @@ def radial_profile(position, mass=None, method='density', dN=100, dr=None, dlogr
         if method=='percentile':
             rho_tmp = np.percentile(mass[i:i+step], percentiles, axis=0)
         if method=='cumsum':
-            rho_temp += dM
+            rho_tmp += dM
         r_tmp = (r0+r1)/2
         r.append(r_tmp)
         rho.append(rho_tmp)
